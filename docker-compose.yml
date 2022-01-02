@@ -1,0 +1,7 @@
+version: '3.8'
+
+services:
+  service:
+    image: fdl-mc/api/users
+    ports:
+      - 8002:8000
