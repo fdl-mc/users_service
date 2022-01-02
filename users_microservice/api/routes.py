@@ -10,6 +10,6 @@ async def get_all_users():
     return await User.objects.all()
 
 
-@users.get("/:id", response_model=User)
-async def get_user():
+@users.get("/{id}", response_model=User)
+async def get_user(id: int):
     return await User.objects.get(id=id)
