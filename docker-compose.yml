@@ -1,7 +1,9 @@
-version: '3.8'
+version: '3.5'
 
 services:
-  service:
+  fdl_users_microservice:
     image: fdl-mc/api/users
+    environment:
+      - POSTGRES_URL=[URL]
     ports:
       - 8002:8000
