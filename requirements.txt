@@ -2,4 +2,5 @@ pydantic
 fastapi
 uvicorn
 sqlalchemy
+psycopg2
 ormar[postgresql]
