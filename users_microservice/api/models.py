@@ -1,5 +1,5 @@
 import ormar
-from .database import database, metadata
+from users_microservice.api.database import database, metadata
 
 
 class User(ormar.Model):
