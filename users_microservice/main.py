@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from users_microservice.api.routes import users
-from users_microservice.api.database import database, metadata, engine
+from .api.routes import users
+from .api.database import database, metadata, engine
 
 app = FastAPI()
 app.add_middleware(

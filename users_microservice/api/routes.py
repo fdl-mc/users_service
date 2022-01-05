@@ -1,5 +1,5 @@
 from fastapi.routing import APIRouter
-from users_microservice.api.models import User
+from .models import User
 
 
 users = APIRouter()
