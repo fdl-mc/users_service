@@ -12,14 +12,14 @@ async def get_all_users():
     return await User.objects.all()
 
 
-@router.get("/callback")
+@router.get("/callback", response_model=User)
 async def auth_callback(code: str):
     token, _ = await discord.get_access_token(code)
     user_data = await discord.request("/users/@me", token)
     return await User.objects.get_or_create(discord_id=user_data["id"])
 
 
-@router.get("/me")
+@router.get("/me", response_model=list[User])
 async def get_self(user: User = Depends(discord.user)):
     return await User.objects.get(discord_id=user.id)
 
