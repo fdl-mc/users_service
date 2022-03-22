@@ -1,0 +1,14 @@
+[package]
+name = "users_microservice"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1" }
+tokio = { version = "1.17", features = ["full"] }
+envy = { version = "0.4" }
+tracing = { version = "0.1" }
+tracing-subscriber = { version = "0.3" }
+tower = { version = "0.4", features = ["full"] }
+tower-http = { version = "0.2", features = ["full"] }
+axum = { version = "0.4" }
