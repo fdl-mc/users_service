@@ -17,6 +17,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let db = Database::connect(config.postgres_url.to_owned()).await?;
     let app = Router::new()
         .route("/", get(routes::identity::get_all_identities))
+        .route("/:id", get(routes::identity::get_identity_by_id))
         .layer(TraceLayer::new_for_http())
         .layer(Extension(db))
         .layer(Extension(config));
