@@ -1,4 +1,4 @@
-use super::super::models::identity::identity;
+use super::super::models::identity;
 use axum::{extract::Extension, http::StatusCode, Json};
 use sea_orm::{DatabaseConnection, EntityTrait};
 
