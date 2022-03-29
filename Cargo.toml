@@ -17,3 +17,6 @@ sea-orm = { version = "0.5", features = [
     "sqlx-postgres",
     "macros",
 ], default-features = false }
+reqwest = { version = "0.11", features = ["json"] }
+jsonwebtoken = { version = "8" }
+sha2 = { version = "0.10" }

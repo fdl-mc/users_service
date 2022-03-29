@@ -1,6 +1,9 @@
-use super::super::models::identity;
+use super::super::{
+    models::{dto::LoginData, user},
+    utils::prelude::*,
+};
 use axum::{
-    extract::{Extension, Path, Query},
+    extract::{Extension, Path},
     http::StatusCode,
     Json,
 };
@@ -10,8 +13,8 @@ type RouteResult<T> = Result<T, (StatusCode, String)>;
 
 pub async fn get_all_identities(
     Extension(db): Extension<DatabaseConnection>,
-) -> RouteResult<Json<Vec<identity::Model>>> {
-    let res = identity::Entity::find().all(&db).await;
+) -> RouteResult<Json<Vec<user::Model>>> {
+    let res = user::Entity::find().all(&db).await;
 
     match res {
         Ok(ids) => Ok(Json(ids)),
@@ -22,8 +25,8 @@ pub async fn get_all_identities(
 pub async fn get_identity_by_id(
     Extension(db): Extension<DatabaseConnection>,
     Path(id): Path<i32>,
-) -> RouteResult<Json<identity::Model>> {
-    let res = identity::Entity::find_by_id(id).one(&db).await;
+) -> RouteResult<Json<user::Model>> {
+    let res = user::Entity::find_by_id(id).one(&db).await;
 
     match res {
         Ok(model) => match model {
@@ -34,9 +37,9 @@ pub async fn get_identity_by_id(
     }
 }
 
-pub async fn auth_callback(
-    Extension(db): Extension<DatabaseConnection>,
-    Query(code): Query<String>,
-) -> RouteResult<Json<identity::Model>> {
-    todo!()
+pub async fn login(
+    Extension(config): Extension<Config>,
+    payload: LoginData,
+) -> RouteResult<String> {
+    todo!();
 }

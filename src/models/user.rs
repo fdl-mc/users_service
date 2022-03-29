@@ -6,7 +6,8 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    pub discord_id: Option<String>,
+    pub nickname: String,
+    pub admin: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter)]
