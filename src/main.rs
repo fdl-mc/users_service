@@ -2,7 +2,7 @@ pub mod models;
 pub mod routes;
 pub mod utils;
 
-use axum::{extract::Extension, routing::get, Router};
+use axum::{extract::Extension, routing::{get, post}, Router};
 use sea_orm::Database;
 use std::{error::Error, net::SocketAddr, result::Result};
 use tower_http::trace::TraceLayer;
@@ -18,6 +18,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let app = Router::new()
         .route("/", get(routes::users::get_all_identities))
         .route("/:id", get(routes::users::get_identity_by_id))
+        .route("/login", post(routes::users::login))
         .layer(TraceLayer::new_for_http())
         .layer(Extension(db))
         .layer(Extension(config));

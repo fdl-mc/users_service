@@ -1,5 +1,7 @@
+use crate::models::responses::LoginResponse;
+
 use super::super::{
-    models::{dto::LoginData, user},
+    models::{credential, jwt_claims::Claims, payloads::LoginData, user},
     utils::prelude::*,
 };
 use axum::{
@@ -7,7 +9,8 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use sea_orm::{DatabaseConnection, EntityTrait};
+use jsonwebtoken::{encode, EncodingKey, Header};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 type RouteResult<T> = Result<T, (StatusCode, String)>;
 
@@ -38,8 +41,57 @@ pub async fn get_identity_by_id(
 }
 
 pub async fn login(
+    Extension(db): Extension<DatabaseConnection>,
     Extension(config): Extension<Config>,
-    payload: LoginData,
-) -> RouteResult<String> {
-    todo!();
+    Json(payload): Json<LoginData>,
+) -> RouteResult<Json<LoginResponse>> {
+    let user_result = user::Entity::find()
+        .filter(user::Column::Nickname.eq(payload.username))
+        .one(&db)
+        .await;
+
+    let user = match user_result {
+        Ok(res) => match res {
+            Some(user) => user,
+            None => return Err((StatusCode::NOT_FOUND, "Identity not found".to_string())),
+        },
+        Err(err) => return Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string())),
+    };
+
+    let credential_result = credential::Entity::find()
+        .filter(credential::Column::UserId.eq(user.id))
+        .one(&db)
+        .await;
+
+    let credential = match credential_result {
+        Ok(res) => match res {
+            Some(credential) => credential,
+            None => {
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Credential not found".to_string(),
+                ))
+            }
+        },
+        Err(err) => return Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string())),
+    };
+
+    if hash_password(payload.password, credential.salt.clone()) != credential.password {
+        return Err((StatusCode::FORBIDDEN, "Incorrect password".to_string()));
+    }
+
+    let claims = Claims { user_id: user.id };
+
+    let jwt = encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(config.jwt_secret.as_ref()),
+    );
+
+    let jwt = match jwt {
+        Ok(res) => res,
+        Err(err) => return Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string())),
+    };
+
+    Ok(Json(LoginResponse { token: jwt }))
 }
