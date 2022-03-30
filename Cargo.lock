@@ -778,24 +778,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "identity_service"
-version = "0.1.0"
-dependencies = [
- "axum",
- "envy",
- "jsonwebtoken",
- "reqwest",
- "sea-orm",
- "serde",
- "sha2 0.10.2",
- "tokio",
- "tower",
- "tower-http",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "idna"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2255,6 +2237,24 @@ dependencies = [
  "idna",
  "matches",
  "percent-encoding",
+]
+
+[[package]]
+name = "users_service"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "envy",
+ "jsonwebtoken",
+ "reqwest",
+ "sea-orm",
+ "serde",
+ "sha2 0.10.2",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

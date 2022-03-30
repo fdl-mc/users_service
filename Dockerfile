@@ -8,7 +8,7 @@ RUN apt update && apt install -y musl-tools musl-dev
 RUN update-ca-certificates
 
 # Create appuser
-ENV USER=users_microservice
+ENV USER=users_service
 ENV UID=10001
 
 RUN adduser \
@@ -21,7 +21,7 @@ RUN adduser \
     "${USER}"
 
 
-WORKDIR /users_microservice
+WORKDIR /users_service
 
 COPY ./ .
 
@@ -36,12 +36,12 @@ FROM scratch
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
 
-WORKDIR /users_microservice
+WORKDIR /users_service
 
 # Copy our build
-COPY --from=builder /users_microservice/target/x86_64-unknown-linux-musl/release/users_microservice ./
+COPY --from=builder /users_service/target/x86_64-unknown-linux-musl/release/users_service ./
 
 # Use an unprivileged user.
-USER users_microservice:users_microservice
+USER users_service:users_service
 
-CMD ["/users_microservice/users_microservice"]
+CMD ["/users_service/users_service"]
