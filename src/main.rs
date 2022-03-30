@@ -14,7 +14,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     tracing_subscriber::fmt::init();
 
     let config = envy::from_env::<Config>()?;
-    let db = Database::connect(config.postgres_url.to_owned()).await?;
+    let db = Database::connect(config.database_url.to_owned()).await?;
     let app = Router::new()
         .route("/", get(routes::users::get_all_users))
         .route("/:id", get(routes::users::get_user_by_id))

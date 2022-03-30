@@ -4,7 +4,7 @@ services:
   fdl_users_service:
     image: fdl-mc/api/users
     environment:
-      - POSTGRES_URL=
+      - DATABASE_URL=
       - JWT_SECRET=
     ports:
       - 8002:8000
