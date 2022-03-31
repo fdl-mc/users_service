@@ -1,4 +1,4 @@
-use crate::models::responses::LoginResponse;
+use crate::models::{payloads::Credentials, responses::LoginResponse};
 
 use super::super::{
     models::{credential, jwt_claims::Claims, payloads::LoginData, user},
@@ -9,7 +9,7 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use jsonwebtoken::{encode, EncodingKey, Header};
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 type RouteResult<T> = Result<T, (StatusCode, String)>;
@@ -38,6 +38,36 @@ pub async fn get_user_by_id(
         },
         Err(err) => Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string())),
     }
+}
+
+pub async fn get_self(
+    Extension(db): Extension<DatabaseConnection>,
+    Extension(config): Extension<Config>,
+    Json(credentials): Json<Credentials>,
+) -> RouteResult<Json<user::Model>> {
+    let claims_res = decode::<Claims>(
+        &credentials.token,
+        &DecodingKey::from_secret(config.jwt_secret.as_ref()),
+        &Validation::new(Algorithm::ES256),
+    );
+
+    let claims = match claims_res {
+        Ok(res) => res,
+        Err(_) => return Err((StatusCode::UNAUTHORIZED, "Unauthorized".to_string())),
+    }
+    .claims;
+
+    let user_res = user::Entity::find_by_id(claims.user_id).one(&db).await;
+
+    let user = match user_res {
+        Ok(res) => match res {
+            Some(res) => res,
+            None => return Err((StatusCode::NOT_FOUND, "User not found".to_string())),
+        },
+        Err(err) => return Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string())),
+    };
+
+    Ok(Json(user))
 }
 
 pub async fn login(

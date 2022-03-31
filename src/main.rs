@@ -2,7 +2,11 @@ pub mod models;
 pub mod routes;
 pub mod utils;
 
-use axum::{extract::Extension, routing::{get, post}, Router};
+use axum::{
+    extract::Extension,
+    routing::{get, post},
+    Router,
+};
 use sea_orm::Database;
 use std::{error::Error, net::SocketAddr, result::Result};
 use tower_http::trace::TraceLayer;
