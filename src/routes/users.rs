@@ -9,6 +9,7 @@ use axum::{
     http::StatusCode,
     Json,
 };
+use axum_auth::AuthBearer;
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
@@ -43,17 +44,19 @@ pub async fn get_user_by_id(
 pub async fn get_self(
     Extension(db): Extension<DatabaseConnection>,
     Extension(config): Extension<Config>,
-    Json(credentials): Json<Credentials>,
+    AuthBearer(token): AuthBearer,
 ) -> RouteResult<Json<user::Model>> {
+    let mut validation = Validation::new(Algorithm::HS256);
+    validation.validate_exp = false;
     let claims_res = decode::<Claims>(
-        &credentials.token,
+        &token,
         &DecodingKey::from_secret(config.jwt_secret.as_ref()),
-        &Validation::new(Algorithm::ES256),
+        &validation,
     );
 
     let claims = match claims_res {
         Ok(res) => res,
-        Err(_) => return Err((StatusCode::UNAUTHORIZED, "Unauthorized".to_string())),
+        Err(err) => return Err((StatusCode::UNAUTHORIZED, err.to_string())),
     }
     .claims;
 
@@ -64,7 +67,12 @@ pub async fn get_self(
             Some(res) => res,
             None => return Err((StatusCode::NOT_FOUND, "User not found".to_string())),
         },
-        Err(err) => return Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string())),
+        Err(_) => {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Invalid token".to_string(),
+            ))
+        }
     };
 
     Ok(Json(user))
@@ -110,7 +118,10 @@ pub async fn login(
         return Err((StatusCode::FORBIDDEN, "Incorrect password".to_string()));
     }
 
-    let claims = Claims { user_id: user.id };
+    let claims = Claims {
+        user_id: user.id,
+        exp: 2147483647,
+    };
 
     let jwt = encode(
         &Header::default(),

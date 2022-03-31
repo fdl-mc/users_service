@@ -20,3 +20,4 @@ sea-orm = { version = "0.5", features = [
 reqwest = { version = "0.11", features = ["json"] }
 jsonwebtoken = { version = "8" }
 sha2 = { version = "0.10" }
+axum-auth = { version = "0.1" }
