@@ -1,4 +1,4 @@
-use crate::models::{payloads::Credentials, responses::LoginResponse};
+use crate::models::responses::LoginResponse;
 
 use super::super::{
     models::{credential, jwt_claims::Claims, payloads::LoginData, user},
