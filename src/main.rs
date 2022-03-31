@@ -22,6 +22,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let app = Router::new()
         .route("/", get(routes::users::get_all_users))
         .route("/:id", get(routes::users::get_user_by_id))
+        .route("/@me", get(routes::users::get_self))
         .route("/login", post(routes::users::login))
         .layer(TraceLayer::new_for_http())
         .layer(Extension(db))
