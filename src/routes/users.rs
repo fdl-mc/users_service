@@ -1,11 +1,11 @@
-use crate::models::responses::LoginResponse;
+use crate::models::{payloads::FindData, responses::LoginResponse};
 
 use super::super::{
     models::{credential, jwt_claims::Claims, payloads::LoginData, user},
     utils::prelude::*,
 };
 use axum::{
-    extract::{Extension, Path},
+    extract::{Extension, Path, Query},
     http::StatusCode,
     Json,
 };
@@ -37,6 +37,21 @@ pub async fn get_user_by_id(
             Some(model) => Ok(Json(model)),
             None => Err((StatusCode::NOT_FOUND, "User not found".to_string())),
         },
+        Err(err) => Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string())),
+    }
+}
+
+pub async fn find_user(
+    Extension(db): Extension<DatabaseConnection>,
+    Query(payload): Query<FindData>,
+) -> RouteResult<Json<Vec<user::Model>>> {
+    let users = user::Entity::find()
+        .filter(user::Column::Nickname.like(&payload.nickname))
+        .all(&db)
+        .await;
+
+    match users {
+        Ok(user) => Ok(Json(user)),
         Err(err) => Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string())),
     }
 }
