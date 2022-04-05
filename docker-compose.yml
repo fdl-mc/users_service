@@ -4,7 +4,7 @@ services:
   fdl_users_service:
     image: fdl-mc/api/users
     environment:
-      - DATABASE_URL=
-      - JWT_SECRET=
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
     ports:
       - 8002:8000
