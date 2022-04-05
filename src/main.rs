@@ -10,8 +10,7 @@ use axum::{
 use sea_orm::Database;
 use std::{error::Error, net::SocketAddr, result::Result};
 use tower_http::trace::TraceLayer;
-
-use self::utils::prelude::*;
+use utils::{config::Config, migration};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -19,6 +18,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let config = envy::from_env::<Config>()?;
     let db = Database::connect(config.database_url.to_owned()).await?;
+
+    migration::migrate_all(db.clone()).await;
+
     let app = Router::new()
         .route("/", get(routes::users::get_all_users))
         .route("/:id", get(routes::users::get_user_by_id))
