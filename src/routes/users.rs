@@ -1,6 +1,6 @@
 use crate::models::{payloads::FindData, responses::LoginResponse};
 
-use super::super::{
+use crate::{
     models::{credential, jwt_claims::Claims, payloads::LoginData, user},
     utils::prelude::*,
 };
