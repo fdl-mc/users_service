@@ -21,13 +21,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     migration::migrate_all(db.clone()).await;
 
-    let app = Router::new()
+    let users_router = Router::new()
         .route("/", get(routes::users::get_all_users))
         .route("/:id", get(routes::users::get_user_by_id))
         .route("/find", get(routes::users::find_user))
-        .route("/@me", get(routes::users::get_self))
-        .route("/login", post(routes::users::login))
-        .route("/change_password", patch(routes::users::change_password))
+        .route("/@me", get(routes::users::get_self));
+
+    let auth_router = Router::new()
+        .route("/", post(routes::auth::login))
+        .route("/password", patch(routes::auth::change_password));
+
+    let router = Router::new()
+        .nest("/", users_router)
+        .nest("/auth", auth_router);
+
+    let app = router
         .layer(TraceLayer::new_for_http())
         .layer(Extension(db))
         .layer(Extension(config));
