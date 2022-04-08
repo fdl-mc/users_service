@@ -10,3 +10,8 @@ pub struct LoginData {
 pub struct FindData {
     pub nickname: String,
 }
+
+#[derive(Deserialize, Debug)]
+pub struct ChangePasswordData {
+    pub new_password: String,
+}

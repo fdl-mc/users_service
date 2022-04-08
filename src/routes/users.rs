@@ -1,5 +1,7 @@
+use crate::models::payloads::ChangePasswordData;
 use crate::models::{payloads::FindData, responses::LoginResponse};
 
+use crate::utils::generate_salt;
 use crate::{
     models::{credential, jwt_claims::Claims, payloads::LoginData, user},
     utils::prelude::*,
@@ -11,7 +13,7 @@ use axum::{
 };
 use axum_auth::AuthBearer;
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 
 type RouteResult<T, E> = Result<(StatusCode, T), (StatusCode, E)>;
 
@@ -150,4 +152,61 @@ pub async fn login(
     };
 
     Ok((StatusCode::OK, Json(LoginResponse { token: jwt })))
+}
+
+pub async fn change_password(
+    Extension(config): Extension<Config>,
+    Extension(db): Extension<DatabaseConnection>,
+    AuthBearer(token): AuthBearer,
+    Json(payload): Json<ChangePasswordData>,
+) -> RouteResult<(), String> {
+    // Validate and extract data from token
+    let mut validation = Validation::new(Algorithm::HS256);
+    validation.validate_exp = false;
+    let claims_res = decode::<Claims>(
+        &token,
+        &DecodingKey::from_secret(config.jwt_secret.as_ref()),
+        &validation,
+    );
+
+    let claims = match claims_res {
+        Ok(res) => res,
+        Err(err) => return Err((StatusCode::UNAUTHORIZED, err.to_string())),
+    }
+    .claims;
+
+    // Find a credential model
+    let credential_result = credential::Entity::find()
+        .filter(credential::Column::UserId.eq(claims.user_id))
+        .one(&db)
+        .await;
+
+    let credential = match credential_result {
+        Ok(res) => match res {
+            Some(credential) => credential,
+            None => {
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Credential not found".to_string(),
+                ))
+            }
+        },
+        Err(err) => return Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string())),
+    };
+
+    // Update the password
+    let mut credential: credential::ActiveModel = credential.into();
+
+    let salt = generate_salt();
+    let new_password = hash_password(payload.new_password, salt);
+
+    credential.salt = Set(generate_salt());
+    credential.password = Set(new_password);
+
+    match credential.update(&db).await {
+        Err(err) => return Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string())),
+        _ => (),
+    };
+
+    Ok((StatusCode::NO_CONTENT, ()))
 }
