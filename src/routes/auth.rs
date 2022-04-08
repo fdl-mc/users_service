@@ -1,10 +1,12 @@
-use crate::models::payloads::ChangePasswordData;
-use crate::models::responses::LoginResponse;
-
-use crate::utils::generate_salt;
 use crate::{
-    models::{credential, jwt_claims::Claims, payloads::LoginData, user},
-    utils::prelude::*,
+    models::{
+        credential,
+        jwt_claims::Claims,
+        payloads::{ChangePasswordPayload, LoginPayload},
+        responses::LoginResponse,
+        user,
+    },
+    utils::{generate_salt, prelude::*},
 };
 use axum::{extract::Extension, http::StatusCode, Json};
 use axum_auth::AuthBearer;
@@ -16,7 +18,7 @@ type RouteResult<T, E> = Result<(StatusCode, T), (StatusCode, E)>;
 pub async fn login(
     Extension(db): Extension<DatabaseConnection>,
     Extension(config): Extension<Config>,
-    Json(payload): Json<LoginData>,
+    Json(payload): Json<LoginPayload>,
 ) -> RouteResult<Json<LoginResponse>, String> {
     let user_result = user::Entity::find()
         .filter(user::Column::Nickname.eq(payload.username))
@@ -76,7 +78,7 @@ pub async fn change_password(
     Extension(config): Extension<Config>,
     Extension(db): Extension<DatabaseConnection>,
     AuthBearer(token): AuthBearer,
-    Json(payload): Json<ChangePasswordData>,
+    Json(payload): Json<ChangePasswordPayload>,
 ) -> RouteResult<(), String> {
     // Validate and extract data from token
     let mut validation = Validation::new(Algorithm::HS256);

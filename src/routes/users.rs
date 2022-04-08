@@ -1,5 +1,5 @@
 use crate::{
-    models::{jwt_claims::Claims, payloads::FindData, user},
+    models::{jwt_claims::Claims, payloads::FindPayload, user},
     utils::prelude::*,
 };
 use axum::{
@@ -41,7 +41,7 @@ pub async fn get_user_by_id(
 
 pub async fn find_user(
     Extension(db): Extension<DatabaseConnection>,
-    Query(payload): Query<FindData>,
+    Query(payload): Query<FindPayload>,
 ) -> RouteResult<Json<Vec<user::Model>>, String> {
     let users = user::Entity::find()
         .filter(user::Column::Nickname.like(&payload.nickname))

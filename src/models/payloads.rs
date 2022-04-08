@@ -1,17 +1,17 @@
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
-pub struct LoginData {
+pub struct LoginPayload {
     pub username: String,
     pub password: String,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct FindData {
+pub struct FindPayload {
     pub nickname: String,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct ChangePasswordData {
+pub struct ChangePasswordPayload {
     pub new_password: String,
 }
