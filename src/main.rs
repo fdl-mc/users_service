@@ -4,7 +4,7 @@ pub mod utils;
 
 use axum::{
     extract::Extension,
-    routing::{get, post},
+    routing::{get, patch, post},
     Router,
 };
 use sea_orm::Database;
@@ -27,6 +27,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .route("/find", get(routes::users::find_user))
         .route("/@me", get(routes::users::get_self))
         .route("/login", post(routes::users::login))
+        .route("/change_password", patch(routes::users::change_password))
         .layer(TraceLayer::new_for_http())
         .layer(Extension(db))
         .layer(Extension(config));
