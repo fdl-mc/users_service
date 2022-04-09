@@ -1,3 +1,5 @@
+//! Route handlers responses.
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
