@@ -6,7 +6,7 @@ use crate::{
         responses::LoginResponse,
         user,
     },
-    utils::{generate_salt, prelude::*},
+    utils::{config::Config, generate_salt, hash_password},
 };
 use axum::{extract::Extension, http::StatusCode, Json};
 use axum_auth::AuthBearer;
@@ -15,11 +15,13 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, Qu
 
 type RouteResult<T, E> = Result<(StatusCode, T), (StatusCode, E)>;
 
+/// Verify credentials and return an access token
 pub async fn login(
     Extension(db): Extension<DatabaseConnection>,
     Extension(config): Extension<Config>,
     Json(payload): Json<LoginPayload>,
 ) -> RouteResult<Json<LoginResponse>, String> {
+    // Find a user by username
     let user_result = user::Entity::find()
         .filter(user::Column::Nickname.eq(payload.username))
         .one(&db)
@@ -33,6 +35,7 @@ pub async fn login(
         Err(err) => return Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string())),
     };
 
+    // Find a credential by user ID
     let credential_result = credential::Entity::find()
         .filter(credential::Column::UserId.eq(user.id))
         .one(&db)
@@ -51,10 +54,12 @@ pub async fn login(
         Err(err) => return Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string())),
     };
 
+    // Verify password
     if hash_password(payload.password, credential.salt.clone()) != credential.password {
         return Err((StatusCode::FORBIDDEN, "Incorrect password".to_string()));
     }
 
+    // Make token
     let claims = Claims {
         user_id: user.id,
         exp: 2147483647,
@@ -74,6 +79,7 @@ pub async fn login(
     Ok((StatusCode::OK, Json(LoginResponse { token: jwt })))
 }
 
+/// Change account password
 pub async fn change_password(
     Extension(config): Extension<Config>,
     Extension(db): Extension<DatabaseConnection>,

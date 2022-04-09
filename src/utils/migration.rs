@@ -1,3 +1,5 @@
+//! Set of database migration utilities
+
 use crate::models::{credential, user};
 use sea_orm::{prelude::*, ConnectionTrait, Schema};
 
@@ -21,6 +23,7 @@ where
     };
 }
 
+/// Migrate all models
 pub async fn migrate_all(db: DatabaseConnection) {
     migrate(db.clone(), user::Entity).await;
     migrate(db.clone(), credential::Entity).await;

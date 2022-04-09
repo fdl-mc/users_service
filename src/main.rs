@@ -14,13 +14,17 @@ use utils::{config::Config, migration};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    // Initialize tracing (to stdout)
     tracing_subscriber::fmt::init();
 
+    // Load config from env and connect to database
     let config = envy::from_env::<Config>()?;
     let db = Database::connect(config.database_url.to_owned()).await?;
 
+    // Run migrations
     migration::migrate_all(db.clone()).await;
 
+    // Setup an app
     let users_router = Router::new()
         .route("/", get(routes::users::get_all_users))
         .route("/:id", get(routes::users::get_user_by_id))
@@ -40,6 +44,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .layer(Extension(db))
         .layer(Extension(config));
 
+    // Serve the app
     axum::Server::bind(&SocketAddr::from(([0, 0, 0, 0], 8000)))
         .serve(app.into_make_service())
         .await?;

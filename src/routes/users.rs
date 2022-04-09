@@ -1,6 +1,6 @@
 use crate::{
     models::{jwt_claims::Claims, payloads::FindPayload, user},
-    utils::prelude::*,
+    utils::config::Config,
 };
 use axum::{
     extract::{Extension, Path, Query},
@@ -13,6 +13,7 @@ use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 type RouteResult<T, E> = Result<(StatusCode, T), (StatusCode, E)>;
 
+/// Fetch all users.
 pub async fn get_all_users(
     Extension(db): Extension<DatabaseConnection>,
 ) -> RouteResult<Json<Vec<user::Model>>, String> {
@@ -24,6 +25,7 @@ pub async fn get_all_users(
     }
 }
 
+/// Fetch a user by ID.
 pub async fn get_user_by_id(
     Extension(db): Extension<DatabaseConnection>,
     Path(id): Path<i32>,
@@ -39,6 +41,7 @@ pub async fn get_user_by_id(
     }
 }
 
+/// Find a user by nickname (or something else).
 pub async fn find_user(
     Extension(db): Extension<DatabaseConnection>,
     Query(payload): Query<FindPayload>,
@@ -54,11 +57,13 @@ pub async fn find_user(
     }
 }
 
+/// Fetch user by access token
 pub async fn get_self(
     Extension(db): Extension<DatabaseConnection>,
     Extension(config): Extension<Config>,
     AuthBearer(token): AuthBearer,
 ) -> RouteResult<Json<user::Model>, String> {
+    // Verify JWT token and extract claims
     let mut validation = Validation::new(Algorithm::HS256);
     validation.validate_exp = false;
     let claims_res = decode::<Claims>(
@@ -73,6 +78,7 @@ pub async fn get_self(
     }
     .claims;
 
+    // Find a user by user ID
     let user_res = user::Entity::find_by_id(claims.user_id).one(&db).await;
 
     let user = match user_res {

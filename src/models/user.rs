@@ -1,3 +1,6 @@
+//! A generic user profile.
+//! Provides minimal data that can be used for users identification.
+
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 

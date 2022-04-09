@@ -1,3 +1,5 @@
+//! Contains credential data related to specific user.
+
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 

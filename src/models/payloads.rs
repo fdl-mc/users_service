@@ -1,3 +1,5 @@
+//! Request body payloads.
+
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
