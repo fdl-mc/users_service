@@ -1,12 +1,13 @@
 use crate::{
     models::{
+        config::Config,
         credential,
         jwt_claims::Claims,
         payloads::{ChangePasswordPayload, LoginPayload},
         responses::LoginResponse,
         user,
     },
-    utils::{config::Config, generate_salt, hash_password},
+    utils::{generate_salt, hash_password},
 };
 use axum::{extract::Extension, http::StatusCode, Json};
 use axum_auth::AuthBearer;

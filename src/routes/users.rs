@@ -1,7 +1,4 @@
-use crate::{
-    models::{jwt_claims::Claims, payloads::FindPayload, user},
-    utils::config::Config,
-};
+use crate::models::{config::Config, jwt_claims::Claims, payloads::FindPayload, user};
 use axum::{
     extract::{Extension, Path, Query},
     http::StatusCode,

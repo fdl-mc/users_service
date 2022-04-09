@@ -7,10 +7,11 @@ use axum::{
     routing::{get, patch, post},
     Router,
 };
+use models::config::Config;
 use sea_orm::Database;
 use std::{error::Error, net::SocketAddr, result::Result};
 use tower_http::trace::TraceLayer;
-use utils::{config::Config, migration};
+use utils::migration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
