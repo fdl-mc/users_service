@@ -1,7 +1,0 @@
-pydantic
-fastapi
-fastapi-discord
-uvicorn
-sqlalchemy
-psycopg2
-ormar[postgresql]

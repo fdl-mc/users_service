@@ -1,12 +1,10 @@
 version: '3.5'
 
 services:
-  fdl_users_microservice:
+  fdl_users_service:
     image: fdl-mc/api/users
     environment:
-      - POSTGRES_URL=
-      - DISCORD_CLIENT_ID=
-      - DISCORD_CLIENT_SECRET=
-      - DISCORD_REDIRECT_URL=
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
     ports:
       - 8002:8000
