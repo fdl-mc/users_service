@@ -1,6 +1,5 @@
 //! Internal app utilities.
 
-pub mod config;
 pub mod migration;
 
 use rand::{distributions::Alphanumeric, Rng};
