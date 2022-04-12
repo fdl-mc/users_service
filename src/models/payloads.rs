@@ -17,3 +17,9 @@ pub struct FindPayload {
 pub struct ChangePasswordPayload {
     pub new_password: String,
 }
+
+#[derive(Deserialize, Debug)]
+pub struct CreateUserPayload {
+    pub username: String,
+    pub password: String,
+}
