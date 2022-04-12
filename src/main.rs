@@ -4,7 +4,7 @@ pub mod utils;
 
 use axum::{
     extract::Extension,
-    routing::{get, patch, post},
+    routing::{get, patch, post, put},
     Router,
 };
 use models::config::Config;
@@ -28,6 +28,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Setup an app
     let users_router = Router::new()
         .route("/", get(routes::users::get_all_users))
+        .route("/", put(routes::users::create_new_user))
         .route("/:id", get(routes::users::get_user_by_id))
         .route("/find", get(routes::users::find_user))
         .route("/@me", get(routes::users::get_self));
