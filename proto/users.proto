@@ -1,0 +1,74 @@
+syntax = "proto3";
+package fdl.api.users;
+
+
+service Users {
+    rpc GetAllUsers (GetAllUsersRequest) returns (GetAllUsersResponse);
+    rpc GetUserById (GetUserByIdRequest) returns (GetUserByIdResponse);
+    rpc GetSelfUser (GetSelfUserRequest) returns (GetSelfUserResponse);
+    rpc FindUsers (FindUsersRequest) returns (FindUsersResponse);
+    rpc Login (LoginRequest) returns (LoginResponse);
+    rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+}
+
+
+message User {
+    enum UserRole {
+        ADMIN = 0;
+    }
+
+    int32 id = 1;
+    string nickname = 2;
+    repeated UserRole roles = 3;
+}
+
+
+message GetAllUsersRequest {}
+
+message GetAllUsersResponse {
+    repeated User users = 1;
+}
+
+
+message GetUserByIdRequest {
+    int32 id = 1;
+}
+
+message GetUserByIdResponse {
+    User user = 1;
+}
+
+
+message GetSelfUserRequest {}
+
+message GetSelfUserResponse {
+    User user = 1;
+}
+
+
+message FindUsersRequest {
+    oneof query {
+        string nickname = 1;
+    }
+}
+
+message FindUsersResponse {
+    User user = 1;
+}
+
+
+message LoginRequest {
+    String username = 1;
+    String password = 2;
+}
+
+message LoginResponse {
+    String token = 1;
+}
+
+
+message ChangePasswordRequest {
+    String new_password = 1;
+}
+
+message ChangePasswordResponse {}
