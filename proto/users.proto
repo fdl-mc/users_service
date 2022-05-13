@@ -58,17 +58,17 @@ message FindUsersResponse {
 
 
 message LoginRequest {
-    String username = 1;
-    String password = 2;
+    string username = 1;
+    string password = 2;
 }
 
 message LoginResponse {
-    String token = 1;
+    string token = 1;
 }
 
 
 message ChangePasswordRequest {
-    String new_password = 1;
+    string new_password = 1;
 }
 
 message ChangePasswordResponse {}
