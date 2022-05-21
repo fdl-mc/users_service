@@ -20,12 +20,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_max_level(tracing::Level::DEBUG)
         .init();
 
+    let config = envy::from_env::<Config>().unwrap();
+
     let reflection = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(users_proto::FILE_DESCRIPTOR_SET)
         .build()
         .unwrap();
 
-    let pool = sqlx::PgPool::connect("chungus").await.unwrap();
+    let pool = sqlx::PgPool::connect(&config.database_url.to_owned())
+        .await
+        .unwrap();
 
     let addr = "[::1]:50051".parse().unwrap();
     let users_service = service::UsersService { pool };
