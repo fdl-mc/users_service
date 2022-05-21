@@ -13,13 +13,8 @@ service Users {
 
 
 message User {
-    enum UserRole {
-        ADMIN = 0;
-    }
-
     int32 id = 1;
     string nickname = 2;
-    repeated UserRole roles = 3;
 }
 
 
