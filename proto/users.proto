@@ -3,12 +3,12 @@ package fdl.api.users;
 
 
 service Users {
-    rpc GetAllUsers (GetAllUsersRequest) returns (GetAllUsersResponse);
-    rpc GetUserById (GetUserByIdRequest) returns (GetUserByIdResponse);
-    rpc GetSelfUser (GetSelfUserRequest) returns (GetSelfUserResponse);
-    rpc FindUsers (FindUsersRequest) returns (FindUsersResponse);
-    rpc Login (LoginRequest) returns (LoginResponse);
-    rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+    rpc GetAllUsers (GetAllUsersRequest) returns (GetAllUsersReply);
+    rpc GetUserById (GetUserByIdRequest) returns (GetUserByIdReply);
+    rpc GetSelfUser (GetSelfUserRequest) returns (GetSelfUserReply);
+    rpc FindUsers (FindUsersRequest) returns (FindUsersReply);
+    rpc Login (LoginRequest) returns (LoginReply);
+    rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordReply);
 }
 
 
@@ -20,7 +20,7 @@ message User {
 
 message GetAllUsersRequest {}
 
-message GetAllUsersResponse {
+message GetAllUsersReply {
     repeated User users = 1;
 }
 
@@ -29,14 +29,14 @@ message GetUserByIdRequest {
     int32 id = 1;
 }
 
-message GetUserByIdResponse {
+message GetUserByIdReply {
     User user = 1;
 }
 
 
 message GetSelfUserRequest {}
 
-message GetSelfUserResponse {
+message GetSelfUserReply {
     User user = 1;
 }
 
@@ -47,7 +47,7 @@ message FindUsersRequest {
     }
 }
 
-message FindUsersResponse {
+message FindUsersReply {
     User user = 1;
 }
 
@@ -57,7 +57,7 @@ message LoginRequest {
     string password = 2;
 }
 
-message LoginResponse {
+message LoginReply {
     string token = 1;
 }
 
@@ -66,4 +66,4 @@ message ChangePasswordRequest {
     string new_password = 1;
 }
 
-message ChangePasswordResponse {}
+message ChangePasswordReply {}
