@@ -35,7 +35,21 @@ impl UsersServiceTrait for UsersService {
         &self,
         request: Request<GetUserByIdRequest>,
     ) -> Result<Response<GetUserByIdReply>, Status> {
-        unimplemented!()
+        let id = request.into_inner().id;
+        tracing::debug!(%id);
+        let res = UserModel::get_by_id(id, &self.pool.clone()).await;
+
+        match res {
+            Ok(res) => match res {
+                Some(res) => {
+                    let user = res.into_message();
+                    let reply = GetUserByIdReply { user: Some(user) };
+                    Ok(Response::new(reply))
+                }
+                None => Err(Status::not_found("User not found")),
+            },
+            Err(err) => Err(Status::internal(err.to_string())),
+        }
     }
 
     async fn get_self_user(
