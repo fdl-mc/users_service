@@ -17,11 +17,12 @@ tonic-reflection = { version = "0.4" }
 tonic-health = { version = "0.6" }
 prost-types = { version = "0.10" }
 prost = { version = "0.10" }
-sea-orm = { version = "0.5", features = [
-    "runtime-tokio-rustls",
-    "sqlx-postgres",
-    "macros",
-], default-features = false }
+sqlx = { version = "0.5", features = [ "runtime-tokio-native-tls" , "postgres" ] }
+# sea-orm = { version = "0.5", features = [
+#     "runtime-tokio-rustls",
+#     "sqlx-postgres",
+#     "macros",
+# ], default-features = false }
 reqwest = { version = "0.11", features = ["json"] }
 jsonwebtoken = { version = "8" }
 sha2 = { version = "0.10" }

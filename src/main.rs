@@ -6,7 +6,13 @@ pub mod users_proto {
     pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
         tonic::include_file_descriptor_set!("users_descriptor");
 }
+pub mod model;
 pub mod service;
+
+#[derive(serde::Deserialize, Clone, Debug)]
+pub struct Config {
+    pub database_url: String,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -19,8 +25,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()
         .unwrap();
 
+    let pool = sqlx::PgPool::connect("chungus").await.unwrap();
+
     let addr = "[::1]:50051".parse().unwrap();
-    let users_service = service::UsersService::default();
+    let users_service = service::UsersService { pool };
 
     tracing::info!(message = "Starting server.", %addr);
 
