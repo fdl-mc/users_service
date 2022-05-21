@@ -1,5 +1,6 @@
 use tonic::{Request, Response, Status};
 
+use crate::model::UserModel;
 use crate::users_proto::users_server::Users as UsersServiceTrait;
 use crate::users_proto::{
     ChangePasswordRequest, ChangePasswordResponse, FindUsersRequest, FindUsersResponse,
@@ -7,16 +8,23 @@ use crate::users_proto::{
     GetUserByIdRequest, GetUserByIdResponse, LoginRequest, LoginResponse,
 };
 
-#[derive(Debug, Default)]
-pub struct UsersService {}
+#[derive(Debug)]
+pub struct UsersService {
+    pub pool: sqlx::PgPool,
+}
 
 #[tonic::async_trait]
 impl UsersServiceTrait for UsersService {
     async fn get_all_users(
         &self,
-        request: Request<GetAllUsersRequest>,
+        _request: Request<GetAllUsersRequest>,
     ) -> Result<Response<GetAllUsersResponse>, Status> {
-        unimplemented!()
+        match UserModel::get_all(&self.pool.clone()).await {
+            Ok(res) => Ok(Response::new(GetAllUsersResponse {
+                users: res.iter().map(|x| x.into_message()).collect(),
+            })),
+            Err(err) => Err(Status::internal(err.to_string())),
+        }
     }
 
     async fn get_user_by_id(
