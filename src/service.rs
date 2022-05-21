@@ -36,7 +36,6 @@ impl UsersServiceTrait for UsersService {
         request: Request<GetUserByIdRequest>,
     ) -> Result<Response<GetUserByIdReply>, Status> {
         let id = request.into_inner().id;
-        tracing::debug!(%id);
         let res = UserModel::get_by_id(id, &self.pool.clone()).await;
 
         match res {
