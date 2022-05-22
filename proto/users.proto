@@ -48,7 +48,7 @@ message FindUsersRequest {
 }
 
 message FindUsersReply {
-    User user = 1;
+    repeated User users = 1;
 }
 
 
