@@ -26,6 +26,19 @@ impl UserModel {
                 .await?,
         )
     }
+
+    pub async fn search_by_nickname(
+        nickname: String,
+        pool: &PgPool,
+    ) -> FetchResult<Vec<UserModel>> {
+        let nickname_wildcard = nickname + "%";
+        Ok(
+            sqlx::query_as::<_, UserModel>("SELECT * FROM users WHERE nickname LIKE $1")
+                .bind(nickname_wildcard)
+                .fetch_all(pool)
+                .await?,
+        )
+    }
 }
 
 impl UserModel {

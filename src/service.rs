@@ -3,9 +3,9 @@ use tonic::{Request, Response, Status};
 use crate::model::UserModel;
 use crate::users_proto::users_server::Users as UsersServiceTrait;
 use crate::users_proto::{
-    ChangePasswordReply, ChangePasswordRequest, FindUsersReply, FindUsersRequest, GetAllUsersReply,
-    GetAllUsersRequest, GetSelfUserReply, GetSelfUserRequest, GetUserByIdReply, GetUserByIdRequest,
-    LoginReply, LoginRequest,
+    find_users_request, ChangePasswordReply, ChangePasswordRequest, FindUsersReply,
+    FindUsersRequest, GetAllUsersReply, GetAllUsersRequest, GetSelfUserReply, GetSelfUserRequest,
+    GetUserByIdReply, GetUserByIdRequest, LoginReply, LoginRequest,
 };
 
 #[derive(Debug)]
@@ -62,7 +62,22 @@ impl UsersServiceTrait for UsersService {
         &self,
         request: Request<FindUsersRequest>,
     ) -> Result<Response<FindUsersReply>, Status> {
-        unimplemented!()
+        match request.into_inner().query {
+            Some(res) => match res {
+                find_users_request::Query::Nickname(nickname) => {
+                    let res = UserModel::search_by_nickname(nickname, &self.pool.clone()).await;
+                    match res {
+                        Ok(res) => {
+                            let users = res.iter().map(UserModel::into_message).collect();
+                            let reply = FindUsersReply { users };
+                            Ok(Response::new(reply))
+                        }
+                        Err(err) => Err(Status::internal(err.to_string())),
+                    }
+                }
+            },
+            None => Err(Status::invalid_argument("Query field should not be empty")),
+        }
     }
 
     async fn login(&self, request: Request<LoginRequest>) -> Result<Response<LoginReply>, Status> {
