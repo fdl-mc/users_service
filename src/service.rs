@@ -23,7 +23,7 @@ impl UsersServiceTrait for UsersService {
 
         match res {
             Ok(res) => {
-                let users = res.iter().map(|user| user.into_message()).collect();
+                let users = res.iter().map(UserModel::into_message).collect();
                 let reply = GetAllUsersReply { users };
                 Ok(Response::new(reply))
             }
