@@ -6,7 +6,7 @@ pub mod users_proto {
     pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
         tonic::include_file_descriptor_set!("users_descriptor");
 }
-pub mod model;
+pub mod models;
 pub mod service;
 
 #[derive(serde::Deserialize, Clone, Debug)]

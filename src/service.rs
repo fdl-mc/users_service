@@ -1,6 +1,6 @@
 use tonic::{Request, Response, Status};
 
-use crate::model::UserModel;
+use crate::models::UserModel;
 use crate::users_proto::users_server::Users as UsersServiceTrait;
 use crate::users_proto::{
     find_users_request, ChangePasswordReply, ChangePasswordRequest, FindUsersReply,
