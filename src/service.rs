@@ -1,15 +1,17 @@
 use tonic::{Request, Response, Status};
 
-use crate::models::UserModel;
+use crate::models::{CredentialModel, UserModel};
 use crate::users_proto::users_server::Users as UsersServiceTrait;
 use crate::users_proto::{
     find_users_request, ChangePasswordReply, ChangePasswordRequest, FindUsersReply,
     FindUsersRequest, GetAllUsersReply, GetAllUsersRequest, GetSelfUserReply, GetSelfUserRequest,
     GetUserByIdReply, GetUserByIdRequest, LoginReply, LoginRequest,
 };
+use crate::{Claims, Config};
 
 #[derive(Debug)]
 pub struct UsersService {
+    pub config: Config,
     pub pool: sqlx::PgPool,
 }
 
@@ -81,7 +83,45 @@ impl UsersServiceTrait for UsersService {
     }
 
     async fn login(&self, request: Request<LoginRequest>) -> Result<Response<LoginReply>, Status> {
-        unimplemented!()
+        let inner = request.into_inner();
+
+        // Get user
+        let user = match UserModel::get_by_nickname(inner.username, &self.pool.clone()).await {
+            Ok(res) => match res {
+                Some(res) => res,
+                None => return Err(Status::unauthenticated("Wrong username or password")),
+            },
+            Err(err) => return Err(Status::internal(err.to_string())),
+        };
+
+        // Get their credentials
+        let credentials = match CredentialModel::get_by_user_id(user.id, &self.pool.clone()).await {
+            Ok(res) => match res {
+                Some(res) => res,
+                None => return Err(Status::internal("lol what")),
+            },
+            Err(err) => return Err(Status::internal(err.to_string())),
+        };
+
+        if !credentials.verify_password(inner.password) {
+            return Err(Status::unauthenticated("Wrong username or password"));
+        }
+
+        // Make JWT claims
+        let claims = Claims {
+            user_id: user.id,
+            exp: 2147483647,
+        };
+
+        // Encode to string token
+        let token = match claims.to_jwt(self.config.jwt_secret.to_owned()) {
+            Ok(res) => res,
+            Err(err) => return Err(Status::internal(err.to_string())),
+        };
+
+        // Make and send a reply
+        let reply = LoginReply { token };
+        Ok(Response::new(reply))
     }
 
     async fn change_password(

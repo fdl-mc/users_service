@@ -27,6 +27,18 @@ impl UserModel {
         )
     }
 
+    pub async fn get_by_nickname(
+        nickname: String,
+        pool: &PgPool,
+    ) -> FetchResult<Option<UserModel>> {
+        Ok(
+            sqlx::query_as::<_, UserModel>("SELECT * FROM users WHERE nickname = $1")
+                .bind(nickname)
+                .fetch_optional(pool)
+                .await?,
+        )
+    }
+
     pub async fn search_by_nickname(
         nickname: String,
         pool: &PgPool,

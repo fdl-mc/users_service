@@ -1,3 +1,4 @@
+use sha2::{Digest, Sha256};
 use sqlx::postgres::PgPool;
 
 type FetchResult<T> = Result<T, Box<dyn std::error::Error>>;
@@ -11,12 +12,21 @@ pub struct CredentialModel {
 }
 
 impl CredentialModel {
-    pub async fn get_by_id(id: i32, pool: &PgPool) -> FetchResult<Option<CredentialModel>> {
+    pub async fn get_by_user_id(id: i32, pool: &PgPool) -> FetchResult<Option<CredentialModel>> {
         Ok(
-            sqlx::query_as::<_, Self>("SELECT * FROM credentials WHERE id = $1")
+            sqlx::query_as::<_, Self>("SELECT * FROM credentials WHERE user_id = $1")
                 .bind(id)
                 .fetch_optional(pool)
                 .await?,
         )
+    }
+
+    pub fn verify_password(&self, password_to_verify: String) -> bool {
+        let mut hasher = Sha256::new();
+        hasher.update(&password_to_verify);
+        hasher.update(&self.salt);
+        let password_to_verify = format!("{:x}", hasher.finalize());
+
+        self.password == password_to_verify
     }
 }
