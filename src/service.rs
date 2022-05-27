@@ -57,7 +57,32 @@ impl UsersServiceTrait for UsersService {
         &self,
         request: Request<GetSelfUserRequest>,
     ) -> Result<Response<GetSelfUserReply>, Status> {
-        unimplemented!()
+        // Extract token from metadata
+        let token = match request.metadata().get("x-token") {
+            Some(res) => res.to_str().unwrap().to_string(),
+            None => return Err(Status::unauthenticated("No token provided")),
+        };
+
+        // Verify token and extract claims
+        let claims = match Claims::from_jwt(token, self.config.jwt_secret.to_owned()) {
+            Ok(res) => res,
+            Err(_) => return Err(Status::unauthenticated("Token verification failed")),
+        };
+
+        // Fetch user from claims' user_id
+        let user = match UserModel::get_by_id(claims.user_id, &self.pool.clone()).await {
+            Ok(res) => match res {
+                Some(res) => res,
+                None => return Err(Status::not_found("User not found")),
+            },
+            Err(err) => return Err(Status::internal(err.to_string())),
+        };
+
+        // Make reply and send response
+        let reply = GetSelfUserReply {
+            user: Some(user.into_message()),
+        };
+        Ok(Response::new(reply))
     }
 
     async fn find_users(
