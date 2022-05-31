@@ -1,12 +1,3 @@
-use tonic::transport::Server;
-use users_proto::users_server::UsersServer;
-
-pub mod users_proto {
-    tonic::include_proto!("fdl.api.users.v1");
-    pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
-        tonic::include_file_descriptor_set!("users_descriptor");
-}
-
 mod claims;
 pub use claims::Claims;
 
@@ -14,8 +5,12 @@ mod config;
 pub use config::Config;
 
 pub mod models;
+pub mod proto;
 pub mod service;
 pub mod utils;
+
+use proto::users::users_server::UsersServer;
+use tonic::transport::Server;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -26,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = envy::from_env::<Config>().unwrap();
 
     let reflection = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(users_proto::FILE_DESCRIPTOR_SET)
+        .register_encoded_file_descriptor_set(proto::users::FILE_DESCRIPTOR_SET)
         .build()
         .unwrap();
 

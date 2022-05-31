@@ -1,6 +1,6 @@
 use sqlx::postgres::PgPool;
 
-use crate::users_proto::User as UserMessage;
+use crate::proto::users::User as UserMessage;
 
 type FetchResult<T> = Result<T, Box<dyn std::error::Error>>;
 
