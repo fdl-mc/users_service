@@ -7,7 +7,7 @@ use crate::users_proto::{
     FindUsersRequest, GetAllUsersReply, GetAllUsersRequest, GetSelfUserReply, GetSelfUserRequest,
     GetUserByIdReply, GetUserByIdRequest, LoginReply, LoginRequest,
 };
-use crate::{Claims, Config};
+use crate::{utils, Claims, Config};
 
 #[derive(Debug)]
 pub struct UsersService {
@@ -153,6 +153,42 @@ impl UsersServiceTrait for UsersService {
         &self,
         request: Request<ChangePasswordRequest>,
     ) -> Result<Response<ChangePasswordReply>, Status> {
-        unimplemented!()
+        // Extract token from metadata
+        let token = match request.metadata().get("x-token") {
+            Some(res) => res.to_str().unwrap().to_string(),
+            None => return Err(Status::unauthenticated("No token provided")),
+        };
+
+        // Verify token and extract claims
+        let claims = match Claims::from_jwt(token, self.config.jwt_secret.to_owned()) {
+            Ok(res) => res,
+            Err(_) => return Err(Status::unauthenticated("Token verification failed")),
+        };
+
+        // Fetch credentials from claims' user_id
+        let mut credential =
+            match CredentialModel::get_by_user_id(claims.user_id, &self.pool.clone()).await {
+                Ok(res) => match res {
+                    Some(res) => res,
+                    None => return Err(Status::not_found("Credentials not found")),
+                },
+                Err(err) => return Err(Status::internal(err.to_string())),
+            };
+
+        // Generate new salt and hash the password
+        let salt = utils::crypto::generate_salt();
+        let password =
+            utils::crypto::hash_password(request.into_inner().new_password, salt.clone());
+
+        // Update fileds
+        credential.salt = salt;
+        credential.password = password;
+
+        match credential.update_all(&self.pool.clone()).await {
+            Ok(_) => (),
+            Err(err) => return Err(Status::internal(err.to_string())),
+        };
+
+        Ok(Response::new(ChangePasswordReply {}))
     }
 }
