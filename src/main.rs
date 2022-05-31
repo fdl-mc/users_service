@@ -15,6 +15,7 @@ pub use config::Config;
 
 pub mod models;
 pub mod service;
+pub mod utils;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
