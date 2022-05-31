@@ -1,0 +1,82 @@
+syntax = "proto3";
+package fdl.api.users;
+
+
+// Users management service.
+service Users {
+    // Fetch all registered users
+    rpc GetAllUsers (GetAllUsersRequest) returns (GetAllUsersReply);
+    
+    // Fetch user by their ID
+    rpc GetUserById (GetUserByIdRequest) returns (GetUserByIdReply);
+    
+    // Fetch self
+    rpc GetSelfUser (GetSelfUserRequest) returns (GetSelfUserReply);
+    
+    // Search users by given keywords
+    rpc FindUsers (FindUsersRequest) returns (FindUsersReply);
+    
+    // Get access token
+    rpc Login (LoginRequest) returns (LoginReply);
+    
+    // Change user password
+    rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordReply);
+}
+
+
+// User info
+message User {
+    int32 id = 1;
+    string nickname = 2;
+}
+
+
+message GetAllUsersRequest {}
+
+message GetAllUsersReply {
+    repeated User users = 1;
+}
+
+
+message GetUserByIdRequest {
+    int32 id = 1;
+}
+
+message GetUserByIdReply {
+    User user = 1;
+}
+
+
+message GetSelfUserRequest {}
+
+message GetSelfUserReply {
+    User user = 1;
+}
+
+
+message FindUsersRequest {
+    oneof query {
+        string nickname = 1;
+    }
+}
+
+message FindUsersReply {
+    repeated User users = 1;
+}
+
+
+message LoginRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message LoginReply {
+    string token = 1;
+}
+
+
+message ChangePasswordRequest {
+    string new_password = 1;
+}
+
+message ChangePasswordReply {}

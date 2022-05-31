@@ -1,54 +1,49 @@
+use tonic::transport::Server;
+use users_proto::users_server::UsersServer;
+
+pub mod users_proto {
+    tonic::include_proto!("fdl.api.users");
+    pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
+        tonic::include_file_descriptor_set!("users_descriptor");
+}
+
+mod claims;
+pub use claims::Claims;
+
+mod config;
+pub use config::Config;
+
 pub mod models;
-pub mod routes;
+pub mod service;
 pub mod utils;
 
-use axum::{
-    extract::Extension,
-    routing::{get, patch, post, put},
-    Router,
-};
-use models::config::Config;
-use sea_orm::Database;
-use std::{error::Error, net::SocketAddr, result::Result};
-use tower_http::trace::TraceLayer;
-use utils::migration;
-
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-    // Initialize tracing (to stdout)
-    tracing_subscriber::fmt::init();
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .init();
 
-    // Load config from env and connect to database
-    let config = envy::from_env::<Config>()?;
-    let db = Database::connect(config.database_url.to_owned()).await?;
+    let config = envy::from_env::<Config>().unwrap();
 
-    // Run migrations
-    migration::migrate_all(db.clone()).await;
+    let reflection = tonic_reflection::server::Builder::configure()
+        .register_encoded_file_descriptor_set(users_proto::FILE_DESCRIPTOR_SET)
+        .build()
+        .unwrap();
 
-    // Setup an app
-    let users_router = Router::new()
-        .route("/", get(routes::users::get_all_users))
-        .route("/", put(routes::users::create_new_user))
-        .route("/:id", get(routes::users::get_user_by_id))
-        .route("/find", get(routes::users::find_user))
-        .route("/@me", get(routes::users::get_self));
+    let pool = sqlx::PgPool::connect(&config.database_url.to_owned())
+        .await
+        .unwrap();
 
-    let auth_router = Router::new()
-        .route("/", post(routes::auth::login))
-        .route("/password", patch(routes::auth::change_password));
+    let addr = "[::1]:50051".parse().unwrap();
+    let users_service = service::UsersService { pool, config };
 
-    let router = Router::new()
-        .nest("/", users_router)
-        .nest("/auth", auth_router);
+    tracing::info!(message = "Starting server.", %addr);
 
-    let app = router
-        .layer(TraceLayer::new_for_http())
-        .layer(Extension(db))
-        .layer(Extension(config));
-
-    // Serve the app
-    axum::Server::bind(&SocketAddr::from(([0, 0, 0, 0], 8000)))
-        .serve(app.into_make_service())
+    Server::builder()
+        .trace_fn(|_| tracing::info_span!("users_service"))
+        .add_service(UsersServer::new(users_service))
+        .add_service(reflection)
+        .serve(addr)
         .await?;
 
     Ok(())

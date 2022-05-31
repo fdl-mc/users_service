@@ -10,15 +10,15 @@ envy = { version = "0.4" }
 tracing = { version = "0.1" }
 tracing-subscriber = { version = "0.3" }
 tower = { version = "0.4", features = ["full"] }
-tower-http = { version = "0.2", features = ["full"] }
-axum = { version = "0.4" }
-sea-orm = { version = "0.5", features = [
-    "runtime-tokio-rustls",
-    "sqlx-postgres",
-    "macros",
-], default-features = false }
-reqwest = { version = "0.11", features = ["json"] }
+tonic = { version = "0.7" }
+tonic-reflection = { version = "0.4" }
+tonic-health = { version = "0.6" }
+prost-types = { version = "0.10" }
+prost = { version = "0.10" }
+sqlx = { version = "0.5", features = [ "runtime-tokio-native-tls" , "postgres" ] }
 jsonwebtoken = { version = "8" }
 sha2 = { version = "0.10" }
-axum-auth = { version = "0.1" }
 rand = { version = "0.8.5" }
+
+[build-dependencies]
+tonic-build = { version = "0.7" }

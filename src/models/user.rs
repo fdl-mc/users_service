@@ -1,25 +1,63 @@
-//! A generic user profile.
-//! Provides minimal data that can be used for users identification.
+use sqlx::postgres::PgPool;
 
-use sea_orm::entity::prelude::*;
-use serde::{Deserialize, Serialize};
+use crate::users_proto::User as UserMessage;
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Deserialize, Serialize)]
-#[sea_orm(table_name = "users")]
-pub struct Model {
-    #[sea_orm(primary_key)]
+type FetchResult<T> = Result<T, Box<dyn std::error::Error>>;
+
+#[derive(sqlx::FromRow)]
+pub struct UserModel {
     pub id: i32,
     pub nickname: String,
     pub admin: bool,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter)]
-pub enum Relation {}
+impl UserModel {
+    pub async fn get_all(pool: &PgPool) -> FetchResult<Vec<UserModel>> {
+        Ok(sqlx::query_as::<_, UserModel>("SELECT * FROM users")
+            .fetch_all(pool)
+            .await?)
+    }
 
-impl RelationTrait for Relation {
-    fn def(&self) -> RelationDef {
-        panic!("No RelationDef")
+    pub async fn get_by_id(id: i32, pool: &PgPool) -> FetchResult<Option<UserModel>> {
+        Ok(
+            sqlx::query_as::<_, UserModel>("SELECT * FROM users WHERE id = $1")
+                .bind(id)
+                .fetch_optional(pool)
+                .await?,
+        )
+    }
+
+    pub async fn get_by_nickname(
+        nickname: String,
+        pool: &PgPool,
+    ) -> FetchResult<Option<UserModel>> {
+        Ok(
+            sqlx::query_as::<_, UserModel>("SELECT * FROM users WHERE nickname = $1")
+                .bind(nickname)
+                .fetch_optional(pool)
+                .await?,
+        )
+    }
+
+    pub async fn search_by_nickname(
+        nickname: String,
+        pool: &PgPool,
+    ) -> FetchResult<Vec<UserModel>> {
+        let nickname_wildcard = nickname + "%";
+        Ok(
+            sqlx::query_as::<_, UserModel>("SELECT * FROM users WHERE nickname LIKE $1")
+                .bind(nickname_wildcard)
+                .fetch_all(pool)
+                .await?,
+        )
     }
 }
 
-impl ActiveModelBehavior for ActiveModel {}
+impl UserModel {
+    pub fn into_message(&self) -> UserMessage {
+        UserMessage {
+            id: self.id,
+            nickname: self.nickname.to_owned(),
+        }
+    }
+}

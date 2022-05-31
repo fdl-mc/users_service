@@ -1,8 +1,5 @@
-//! Provides data models used in this app.
+mod credential;
+mod user;
 
-pub mod config;
-pub mod credential;
-pub mod jwt_claims;
-pub mod payloads;
-pub mod responses;
-pub mod user;
+pub use credential::CredentialModel;
+pub use user::UserModel;
