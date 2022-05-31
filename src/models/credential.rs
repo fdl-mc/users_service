@@ -21,6 +21,16 @@ impl CredentialModel {
         )
     }
 
+    pub async fn update_all(&self, pool: &PgPool) -> FetchResult<()> {
+        sqlx::query("UPDATE credentials SET password = $1, salt = $2 WHERE id = $3")
+            .bind(self.password.clone())
+            .bind(self.salt.clone())
+            .bind(self.id)
+            .execute(pool)
+            .await?;
+        Ok(())
+    }
+
     pub fn verify_password(&self, password_to_verify: String) -> bool {
         let mut hasher = Sha256::new();
         hasher.update(&password_to_verify);
