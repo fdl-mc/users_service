@@ -2,16 +2,29 @@ syntax = "proto3";
 package fdl.api.users;
 
 
+// Users management service.
 service Users {
+    // Fetch all registered users
     rpc GetAllUsers (GetAllUsersRequest) returns (GetAllUsersReply);
+    
+    // Fetch user by their ID
     rpc GetUserById (GetUserByIdRequest) returns (GetUserByIdReply);
+    
+    // Fetch self
     rpc GetSelfUser (GetSelfUserRequest) returns (GetSelfUserReply);
+    
+    // Search users by given keywords
     rpc FindUsers (FindUsersRequest) returns (FindUsersReply);
+    
+    // Get access token
     rpc Login (LoginRequest) returns (LoginReply);
+    
+    // Change user password
     rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordReply);
 }
 
 
+// User info
 message User {
     int32 id = 1;
     string nickname = 2;
