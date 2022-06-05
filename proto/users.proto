@@ -1,5 +1,5 @@
 syntax = "proto3";
-package fdl.api.users.v1;
+package fdl.users.v1;
 
 
 // Users management service.
