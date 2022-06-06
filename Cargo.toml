@@ -15,7 +15,7 @@ tonic-reflection = { version = "0.4" }
 tonic-health = { version = "0.6" }
 prost-types = { version = "0.10" }
 prost = { version = "0.10" }
-sqlx = { version = "0.5", features = [ "runtime-tokio-native-tls" , "postgres" ] }
+sqlx = { version = "0.5", features = [ "runtime-tokio-native-tls" , "postgres", "migrate" ] }
 jsonwebtoken = { version = "8" }
 sha2 = { version = "0.10" }
 rand = { version = "0.8.5" }
