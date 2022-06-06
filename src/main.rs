@@ -31,7 +31,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     sqlx::migrate!().run(&pool.clone()).await.unwrap();
 
+<<<<<<< HEAD
     let addr = "[::1]:8000".parse().unwrap();
+=======
+    let addr = "0.0.0.0:8000".parse().unwrap();
+>>>>>>> e03dfa1 (chore: use ipv4 wildcard instead of ipv6 one)
     let users_service = service::UsersService { pool, config };
 
     tracing::info!(message = "Starting server.", %addr);
