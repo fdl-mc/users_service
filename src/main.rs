@@ -29,6 +29,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .unwrap();
 
+    sqlx::migrate!().run(&pool.clone()).await.unwrap();
+
     let addr = "[::1]:8000".parse().unwrap();
     let users_service = service::UsersService { pool, config };
 
