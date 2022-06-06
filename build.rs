@@ -5,7 +5,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     tonic_build::configure()
         .file_descriptor_set_path(out_dir.join("users_descriptor.bin"))
-        .compile(&["proto/users.proto"], &["proto"])
+        .compile(&["proto/fdl/users/v1/users.proto"], &["proto"])
         .unwrap();
 
     Ok(())
