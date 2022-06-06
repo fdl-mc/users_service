@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .unwrap();
 
-    let addr = "[::1]:50051".parse().unwrap();
+    let addr = "[::1]:8000".parse().unwrap();
     let users_service = service::UsersService { pool, config };
 
     tracing::info!(message = "Starting server.", %addr);
