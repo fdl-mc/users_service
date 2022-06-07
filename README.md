@@ -25,4 +25,4 @@ The main service for identifying users of the FDL ecosystem.
 
 
 ## License
-The project is licensend under [MIT License](https://github.com/fdl-mc/users_service/blob/main/LICENSE)
+The project is licensend under [GNU General Public License v3.0](https://github.com/fdl-mc/users_service/blob/main/LICENSE)
