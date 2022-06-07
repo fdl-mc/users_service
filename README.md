@@ -21,8 +21,8 @@ The main service for identifying users of the FDL ecosystem.
 | Variable     | Purpose                                            |
 |--------------|----------------------------------------------------|
 | JWT_SECRET   | JWT secret key                                     |
-| DATABASE_URL | Database URL (supports Postgres, MySQL and SQLite) |
+| DATABASE_URL | Database URL (supports Postgres)                   |
 
 
 ## License
-The project is licensend under [MIT License](https://github.com/fdl-mc/users_microservice/blob/main/LICENSE)
+The project is licensend under [MIT License](https://github.com/fdl-mc/users_service/blob/main/LICENSE)
