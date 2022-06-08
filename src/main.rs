@@ -20,11 +20,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let config = envy::from_env::<Config>().unwrap();
 
-    let reflection = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(proto::users::FILE_DESCRIPTOR_SET)
-        .build()
-        .unwrap();
-
     let pool = sqlx::PgPool::connect(&config.database_url.to_owned())
         .await
         .unwrap();
@@ -39,7 +34,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Server::builder()
         .trace_fn(|_| tracing::info_span!("users_service"))
         .add_service(UsersServer::new(users_service))
-        .add_service(reflection)
         .serve(addr)
         .await?;
 
