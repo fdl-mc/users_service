@@ -11,8 +11,6 @@ tracing = { version = "0.1" }
 tracing-subscriber = { version = "0.3" }
 tower = { version = "0.4", features = ["full"] }
 tonic = { version = "0.7" }
-tonic-reflection = { version = "0.4" }
-tonic-health = { version = "0.6" }
 prost-types = { version = "0.10" }
 prost = { version = "0.10" }
 sqlx = { version = "0.5", features = [ "runtime-tokio-native-tls" , "postgres", "migrate" ] }
