@@ -4,7 +4,7 @@ use crate::proto::users::User as UserMessage;
 
 type FetchResult<T> = Result<T, Box<dyn std::error::Error>>;
 
-#[derive(sqlx::FromRow)]
+#[derive(sqlx::FromRow, Default)]
 pub struct UserModel {
     pub id: i32,
     pub nickname: String,
@@ -12,6 +12,22 @@ pub struct UserModel {
 }
 
 impl UserModel {
+    pub async fn insert(&mut self, pool: &PgPool) -> FetchResult<()> {
+        let res = sqlx::query_as::<_, UserModel>(
+            "INSERT INTO users (nickname, admin) VALUES ($1, $2) RETURNING id, username, admin",
+        )
+        .bind(self.nickname.clone())
+        .bind(self.admin)
+        .fetch_one(pool)
+        .await?;
+
+        self.id = res.id;
+        self.nickname = res.nickname;
+        self.admin = res.admin;
+
+        Ok(())
+    }
+
     pub async fn get_all(pool: &PgPool) -> FetchResult<Vec<UserModel>> {
         Ok(sqlx::query_as::<_, UserModel>("SELECT * FROM users")
             .fetch_all(pool)
