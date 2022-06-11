@@ -3,9 +3,10 @@ use tonic::{Request, Response, Status};
 use crate::models::{CredentialModel, UserModel};
 use crate::proto::users::users_server::Users as UsersServiceTrait;
 use crate::proto::users::{
-    find_users_request, ChangePasswordReply, ChangePasswordRequest, FindUsersReply,
-    FindUsersRequest, GetAllUsersReply, GetAllUsersRequest, GetSelfUserReply, GetSelfUserRequest,
-    GetUserByIdReply, GetUserByIdRequest, LoginReply, LoginRequest,
+    find_users_request, ChangePasswordReply, ChangePasswordRequest, CreateUserReply,
+    CreateUserRequest, FindUsersReply, FindUsersRequest, GetAllUsersReply, GetAllUsersRequest,
+    GetSelfUserReply, GetSelfUserRequest, GetUserByIdReply, GetUserByIdRequest, LoginReply,
+    LoginRequest,
 };
 use crate::{utils, Claims, Config};
 
@@ -190,5 +191,82 @@ impl UsersServiceTrait for UsersService {
         };
 
         Ok(Response::new(ChangePasswordReply {}))
+    }
+
+    async fn create_user(
+        &self,
+        request: Request<CreateUserRequest>,
+    ) -> Result<Response<CreateUserReply>, Status> {
+        let inner = request.into_inner();
+
+        // Extract token from metadata
+        let token = match request.metadata().get("x-token") {
+            Some(res) => res.to_str().unwrap().to_string(),
+            None => return Err(Status::unauthenticated("No token provided")),
+        };
+
+        // Verify token and extract claims
+        let claims = match Claims::from_jwt(token, self.config.jwt_secret.to_owned()) {
+            Ok(res) => res,
+            Err(_) => return Err(Status::unauthenticated("Token verification failed")),
+        };
+
+        // Fetch user from credentials
+        let user = match UserModel::get_by_id(claims.user_id, &self.pool.clone()).await {
+            Ok(res) => match res {
+                Some(res) => res,
+                None => return Err(Status::not_found("User not found")),
+            },
+            Err(err) => return Err(Status::internal(err.to_string())),
+        };
+
+        // Check is admin
+        if !user.admin {
+            return Err(Status::permission_denied("cope harder"));
+        }
+
+        // Validate input data
+        if !inner.username.is_empty() && !inner.password.is_empty() {
+            return Err(Status::invalid_argument("Invalid data"));
+        }
+
+        // Check whether the username is already taken
+        match UserModel::get_by_nickname(inner.username.clone(), &self.pool.clone()).await {
+            Ok(res) => match res {
+                Some(_) => return Err(Status::already_exists("Username already taken")),
+                None => (),
+            },
+            Err(err) => return Err(Status::internal(err.to_string())),
+        };
+
+        // Create new user
+        let mut user = UserModel {
+            nickname: inner.username.clone(),
+            admin: false,
+            ..Default::default()
+        };
+
+        match user.insert(&self.pool.clone()).await {
+            Ok(_) => (),
+            Err(err) => return Err(Status::internal(err.to_string())),
+        };
+
+        // Create new credentials
+        let salt = utils::crypto::generate_salt();
+        let password = utils::crypto::hash_password(inner.password.clone(), salt.clone());
+        let mut credentials = CredentialModel {
+            user_id: user.id,
+            password,
+            salt,
+            ..Default::default()
+        };
+
+        match credentials.insert(&self.pool.clone()).await {
+            Ok(_) => (),
+            Err(err) => return Err(Status::internal(err.to_string())),
+        };
+
+        // Hooray!
+        Ok(Response::new(CreateUserReply {}))
     }
 }
