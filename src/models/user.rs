@@ -14,7 +14,7 @@ pub struct UserModel {
 impl UserModel {
     pub async fn insert(&mut self, pool: &PgPool) -> FetchResult<()> {
         let res = sqlx::query_as::<_, UserModel>(
-            "INSERT INTO users (nickname, admin) VALUES ($1, $2) RETURNING id, username, admin",
+            "INSERT INTO users (nickname, admin) VALUES ($1, $2) RETURNING id, nickname, admin",
         )
         .bind(self.nickname.clone())
         .bind(self.admin)
