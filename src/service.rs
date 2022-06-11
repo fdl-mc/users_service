@@ -197,10 +197,11 @@ impl UsersServiceTrait for UsersService {
         &self,
         request: Request<CreateUserRequest>,
     ) -> Result<Response<CreateUserReply>, Status> {
-        let inner = request.into_inner();
+        let message = request.get_ref();
+        let metadata = request.metadata();
 
         // Extract token from metadata
-        let token = match request.metadata().get("x-token") {
+        let token = match metadata.get("x-token") {
             Some(res) => res.to_str().unwrap().to_string(),
             None => return Err(Status::unauthenticated("No token provided")),
         };
@@ -226,12 +227,12 @@ impl UsersServiceTrait for UsersService {
         }
 
         // Validate input data
-        if !inner.username.is_empty() && !inner.password.is_empty() {
+        if !message.username.is_empty() && !message.password.is_empty() {
             return Err(Status::invalid_argument("Invalid data"));
         }
 
         // Check whether the username is already taken
-        match UserModel::get_by_nickname(inner.username.clone(), &self.pool.clone()).await {
+        match UserModel::get_by_nickname(message.username.clone(), &self.pool.clone()).await {
             Ok(res) => match res {
                 Some(_) => return Err(Status::already_exists("Username already taken")),
                 None => (),
@@ -241,7 +242,7 @@ impl UsersServiceTrait for UsersService {
 
         // Create new user
         let mut user = UserModel {
-            nickname: inner.username.clone(),
+            nickname: message.username.clone(),
             admin: false,
             ..Default::default()
         };
@@ -253,7 +254,7 @@ impl UsersServiceTrait for UsersService {
 
         // Create new credentials
         let salt = utils::crypto::generate_salt();
-        let password = utils::crypto::hash_password(inner.password.clone(), salt.clone());
+        let password = utils::crypto::hash_password(message.password.clone(), salt.clone());
         let mut credentials = CredentialModel {
             user_id: user.id,
             password,
