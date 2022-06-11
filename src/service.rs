@@ -227,7 +227,7 @@ impl UsersServiceTrait for UsersService {
         }
 
         // Validate input data
-        if !message.username.is_empty() && !message.password.is_empty() {
+        if message.username.is_empty() || message.password.is_empty() {
             return Err(Status::invalid_argument("Invalid data"));
         }
 
