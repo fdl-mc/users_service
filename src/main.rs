@@ -11,6 +11,8 @@ pub mod utils;
 
 use proto::users::users_server::UsersServer;
 
+use migration::{Migrator, MigratorTrait};
+
 use sea_orm::Database;
 use tonic::transport::Server;
 
@@ -23,6 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = envy::from_env::<Config>().unwrap();
 
     let db = Database::connect(&config.database_url).await?;
+    Migrator::up(&db, None).await?;
 
     let addr = "0.0.0.0:8000".parse().unwrap();
     let users_service = service::UsersService { conn: db, config };
