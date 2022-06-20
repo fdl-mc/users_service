@@ -23,7 +23,7 @@ impl UsersServiceTrait for UsersService {
         &self,
         _request: Request<GetAllUsersRequest>,
     ) -> Result<Response<GetAllUsersReply>, Status> {
-        // Fetch usera
+        // Fetch users
         let users = match user::Entity::find().all(&self.conn).await {
             Ok(res) => res,
             Err(err) => return Err(Status::internal(err.to_string())),
