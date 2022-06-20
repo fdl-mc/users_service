@@ -1,6 +1,7 @@
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use tonic::{Request, Response, Status};
 
-use crate::models::{CredentialModel, UserModel};
+use crate::models::{credential, user};
 use crate::proto::users::users_server::Users as UsersServiceTrait;
 use crate::proto::users::{
     find_users_request, ChangePasswordReply, ChangePasswordRequest, CreateUserReply,
@@ -13,7 +14,7 @@ use crate::{utils, Claims, Config};
 #[derive(Debug)]
 pub struct UsersService {
     pub config: Config,
-    pub pool: sqlx::PgPool,
+    pub conn: DatabaseConnection,
 }
 
 #[tonic::async_trait]
@@ -22,36 +23,39 @@ impl UsersServiceTrait for UsersService {
         &self,
         _request: Request<GetAllUsersRequest>,
     ) -> Result<Response<GetAllUsersReply>, Status> {
-        let res = UserModel::get_all(&self.pool.clone()).await;
+        // Fetch users
+        let users = match user::Entity::find().all(&self.conn).await {
+            Ok(res) => res,
+            Err(err) => return Err(Status::internal(err.to_string())),
+        };
 
-        match res {
-            Ok(res) => {
-                let users = res.iter().map(UserModel::into_message).collect();
-                let reply = GetAllUsersReply { users };
-                Ok(Response::new(reply))
-            }
-            Err(err) => Err(Status::internal(err.to_string())),
-        }
+        // Prepare reply
+        let reply = GetAllUsersReply {
+            users: users.iter().map(user::Model::into_message).collect(),
+        };
+        Ok(Response::new(reply))
     }
 
     async fn get_user_by_id(
         &self,
         request: Request<GetUserByIdRequest>,
     ) -> Result<Response<GetUserByIdReply>, Status> {
-        let id = request.into_inner().id;
-        let res = UserModel::get_by_id(id, &self.pool.clone()).await;
+        let message = request.get_ref();
 
-        match res {
+        // Fetch user
+        let user = match user::Entity::find_by_id(message.id).one(&self.conn).await {
             Ok(res) => match res {
-                Some(res) => {
-                    let user = res.into_message();
-                    let reply = GetUserByIdReply { user: Some(user) };
-                    Ok(Response::new(reply))
-                }
-                None => Err(Status::not_found("User not found")),
+                Some(res) => res,
+                None => return Err(Status::not_found("User not found")),
             },
-            Err(err) => Err(Status::internal(err.to_string())),
-        }
+            Err(err) => return Err(Status::internal(err.to_string())),
+        };
+
+        // Prepare reply
+        let reply = GetUserByIdReply {
+            user: Some(user.into_message()),
+        };
+        Ok(Response::new(reply))
     }
 
     async fn get_self_user(
@@ -71,7 +75,10 @@ impl UsersServiceTrait for UsersService {
         };
 
         // Fetch user from claims' user_id
-        let user = match UserModel::get_by_id(claims.user_id, &self.pool.clone()).await {
+        let user = match user::Entity::find_by_id(claims.user_id)
+            .one(&self.conn)
+            .await
+        {
             Ok(res) => match res {
                 Some(res) => res,
                 None => return Err(Status::not_found("User not found")),
@@ -90,29 +97,47 @@ impl UsersServiceTrait for UsersService {
         &self,
         request: Request<FindUsersRequest>,
     ) -> Result<Response<FindUsersReply>, Status> {
-        match request.into_inner().query {
-            Some(res) => match res {
-                find_users_request::Query::Nickname(nickname) => {
-                    let res = UserModel::search_by_nickname(nickname, &self.pool.clone()).await;
-                    match res {
-                        Ok(res) => {
-                            let users = res.iter().map(UserModel::into_message).collect();
-                            let reply = FindUsersReply { users };
-                            Ok(Response::new(reply))
-                        }
-                        Err(err) => Err(Status::internal(err.to_string())),
-                    }
-                }
-            },
-            None => Err(Status::invalid_argument("Query field should not be empty")),
-        }
+        let message = request.get_ref();
+
+        // Extract query type from request
+        let query = match &message.query {
+            Some(res) => res,
+            None => return Err(Status::invalid_argument("Query field should not be empty")),
+        };
+
+        // Make database query based on selected query type
+        let users_query_filter = match query {
+            find_users_request::Query::Nickname(nickname) => {
+                user::Column::Nickname.starts_with(&nickname)
+            }
+        };
+
+        // Find all users matching query
+        let users = match user::Entity::find()
+            .filter(users_query_filter)
+            .all(&self.conn)
+            .await
+        {
+            Ok(res) => res,
+            Err(err) => return Err(Status::internal(err.to_string())),
+        };
+
+        // Prepare and send reply
+        let reply = FindUsersReply {
+            users: users.iter().map(user::Model::into_message).collect(),
+        };
+        Ok(Response::new(reply))
     }
 
     async fn login(&self, request: Request<LoginRequest>) -> Result<Response<LoginReply>, Status> {
-        let inner = request.into_inner();
+        let message = request.get_ref();
 
         // Get user
-        let user = match UserModel::get_by_nickname(inner.username, &self.pool.clone()).await {
+        let user = match user::Entity::find()
+            .filter(user::Column::Nickname.eq(message.username.to_owned()))
+            .one(&self.conn)
+            .await
+        {
             Ok(res) => match res {
                 Some(res) => res,
                 None => return Err(Status::unauthenticated("Wrong username or password")),
@@ -121,7 +146,11 @@ impl UsersServiceTrait for UsersService {
         };
 
         // Get their credentials
-        let credentials = match CredentialModel::get_by_user_id(user.id, &self.pool.clone()).await {
+        let credentials = match credential::Entity::find()
+            .filter(credential::Column::UserId.eq(user.id))
+            .one(&self.conn)
+            .await
+        {
             Ok(res) => match res {
                 Some(res) => res,
                 None => return Err(Status::internal("lol what")),
@@ -129,9 +158,12 @@ impl UsersServiceTrait for UsersService {
             Err(err) => return Err(Status::internal(err.to_string())),
         };
 
-        if !credentials.verify_password(inner.password) {
+        // Verify password
+        if !credentials.verify_password(message.password.to_owned()) {
             return Err(Status::unauthenticated("Wrong username or password"));
         }
+
+        // If OK, then...
 
         // Make JWT claims
         let claims = Claims {
@@ -167,14 +199,17 @@ impl UsersServiceTrait for UsersService {
         };
 
         // Fetch credentials from claims' user_id
-        let mut credential =
-            match CredentialModel::get_by_user_id(claims.user_id, &self.pool.clone()).await {
-                Ok(res) => match res {
-                    Some(res) => res,
-                    None => return Err(Status::not_found("Credentials not found")),
-                },
-                Err(err) => return Err(Status::internal(err.to_string())),
-            };
+        let credential = match credential::Entity::find()
+            .filter(credential::Column::UserId.eq(claims.user_id))
+            .one(&self.conn)
+            .await
+        {
+            Ok(res) => match res {
+                Some(res) => res,
+                None => return Err(Status::not_found("Credentials not found")),
+            },
+            Err(err) => return Err(Status::internal(err.to_string())),
+        };
 
         // Generate new salt and hash the password
         let salt = utils::crypto::generate_salt();
@@ -182,10 +217,11 @@ impl UsersServiceTrait for UsersService {
             utils::crypto::hash_password(request.into_inner().new_password, salt.clone());
 
         // Update fileds
-        credential.salt = salt;
-        credential.password = password;
+        let mut credential: credential::ActiveModel = credential.into();
+        credential.salt = Set(salt);
+        credential.password = Set(password);
 
-        match credential.update_all(&self.pool.clone()).await {
+        match credential.update(&self.conn).await {
             Ok(_) => (),
             Err(err) => return Err(Status::internal(err.to_string())),
         };
@@ -213,7 +249,10 @@ impl UsersServiceTrait for UsersService {
         };
 
         // Fetch user from credentials
-        let user = match UserModel::get_by_id(claims.user_id, &self.pool.clone()).await {
+        let user = match user::Entity::find_by_id(claims.user_id)
+            .one(&self.conn)
+            .await
+        {
             Ok(res) => match res {
                 Some(res) => res,
                 None => return Err(Status::not_found("User not found")),
@@ -232,7 +271,11 @@ impl UsersServiceTrait for UsersService {
         }
 
         // Check whether the username is already taken
-        match UserModel::get_by_nickname(message.username.clone(), &self.pool.clone()).await {
+        match user::Entity::find()
+            .filter(user::Column::Nickname.eq(message.username.clone()))
+            .one(&self.conn)
+            .await
+        {
             Ok(res) => match res {
                 Some(_) => return Err(Status::already_exists("Username already taken")),
                 None => (),
@@ -241,28 +284,27 @@ impl UsersServiceTrait for UsersService {
         };
 
         // Create new user
-        let mut user = UserModel {
-            nickname: message.username.clone(),
-            admin: false,
+        let user = user::ActiveModel {
+            nickname: Set(message.username.clone()),
             ..Default::default()
         };
 
-        match user.insert(&self.pool.clone()).await {
-            Ok(_) => (),
+        let user = match user.insert(&self.conn).await {
+            Ok(res) => res,
             Err(err) => return Err(Status::internal(err.to_string())),
         };
 
         // Create new credentials
         let salt = utils::crypto::generate_salt();
         let password = utils::crypto::hash_password(message.password.clone(), salt.clone());
-        let mut credentials = CredentialModel {
-            user_id: user.id,
-            password,
-            salt,
+        let credentials = credential::ActiveModel {
+            user_id: Set(user.id),
+            password: Set(password),
+            salt: Set(salt),
             ..Default::default()
         };
 
-        match credentials.insert(&self.pool.clone()).await {
+        match credentials.insert(&self.conn).await {
             Ok(_) => (),
             Err(err) => return Err(Status::internal(err.to_string())),
         };

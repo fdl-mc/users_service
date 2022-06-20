@@ -10,6 +10,10 @@ pub mod service;
 pub mod utils;
 
 use proto::users::users_server::UsersServer;
+
+use migration::{Migrator, MigratorTrait};
+
+use sea_orm::Database;
 use tonic::transport::Server;
 
 #[tokio::main]
@@ -20,14 +24,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let config = envy::from_env::<Config>().unwrap();
 
-    let pool = sqlx::PgPool::connect(&config.database_url.to_owned())
-        .await
-        .unwrap();
-
-    sqlx::migrate!().run(&pool.clone()).await.unwrap();
+    let db = Database::connect(&config.database_url).await?;
+    Migrator::up(&db, None).await?;
 
     let addr = "0.0.0.0:8000".parse().unwrap();
-    let users_service = service::UsersService { pool, config };
+    let users_service = service::UsersService { conn: db, config };
 
     tracing::info!(message = "Starting server.", %addr);
 
