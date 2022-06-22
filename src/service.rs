@@ -24,10 +24,10 @@ impl UsersServiceTrait for UsersService {
         _request: Request<GetAllUsersRequest>,
     ) -> Result<Response<GetAllUsersReply>, Status> {
         // Fetch users
-        let users = match user::Entity::find().all(&self.conn).await {
-            Ok(res) => res,
-            Err(err) => return Err(Status::internal(err.to_string())),
-        };
+        let users = user::Entity::find()
+            .all(&self.conn)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         // Prepare reply
         let reply = GetAllUsersReply {
@@ -44,10 +44,7 @@ impl UsersServiceTrait for UsersService {
 
         // Fetch user
         let user = match user::Entity::find_by_id(message.id).one(&self.conn).await {
-            Ok(res) => match res {
-                Some(res) => res,
-                None => return Err(Status::not_found("User not found")),
-            },
+            Ok(res) => res.ok_or(Status::not_found("User not found"))?,
             Err(err) => return Err(Status::internal(err.to_string())),
         };
 
@@ -69,20 +66,15 @@ impl UsersServiceTrait for UsersService {
         };
 
         // Verify token and extract claims
-        let claims = match Claims::from_jwt(token, self.config.jwt_secret.to_owned()) {
-            Ok(res) => res,
-            Err(_) => return Err(Status::unauthenticated("Token verification failed")),
-        };
+        let claims = Claims::from_jwt(token, self.config.jwt_secret.to_owned())
+            .map_err(|_| Status::unauthenticated("Token verification failed"))?;
 
         // Fetch user from claims' user_id
         let user = match user::Entity::find_by_id(claims.user_id)
             .one(&self.conn)
             .await
         {
-            Ok(res) => match res {
-                Some(res) => res,
-                None => return Err(Status::not_found("User not found")),
-            },
+            Ok(res) => res.ok_or(Status::not_found("User not found"))?,
             Err(err) => return Err(Status::internal(err.to_string())),
         };
 
@@ -100,10 +92,10 @@ impl UsersServiceTrait for UsersService {
         let message = request.get_ref();
 
         // Extract query type from request
-        let query = match &message.query {
-            Some(res) => res,
-            None => return Err(Status::invalid_argument("Query field should not be empty")),
-        };
+        let query = message
+            .query
+            .as_ref()
+            .ok_or(Status::invalid_argument("Query field should not be empty"))?;
 
         // Make database query based on selected query type
         let users_query_filter = match query {
@@ -113,14 +105,11 @@ impl UsersServiceTrait for UsersService {
         };
 
         // Find all users matching query
-        let users = match user::Entity::find()
+        let users = user::Entity::find()
             .filter(users_query_filter)
             .all(&self.conn)
             .await
-        {
-            Ok(res) => res,
-            Err(err) => return Err(Status::internal(err.to_string())),
-        };
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         // Prepare and send reply
         let reply = FindUsersReply {
@@ -138,10 +127,7 @@ impl UsersServiceTrait for UsersService {
             .one(&self.conn)
             .await
         {
-            Ok(res) => match res {
-                Some(res) => res,
-                None => return Err(Status::unauthenticated("Wrong username or password")),
-            },
+            Ok(res) => res.ok_or(Status::unauthenticated("Wrong username or password"))?,
             Err(err) => return Err(Status::internal(err.to_string())),
         };
 
@@ -151,10 +137,7 @@ impl UsersServiceTrait for UsersService {
             .one(&self.conn)
             .await
         {
-            Ok(res) => match res {
-                Some(res) => res,
-                None => return Err(Status::internal("lol what")),
-            },
+            Ok(res) => res.ok_or(Status::internal("lol what"))?,
             Err(err) => return Err(Status::internal(err.to_string())),
         };
 
@@ -172,10 +155,9 @@ impl UsersServiceTrait for UsersService {
         };
 
         // Encode to string token
-        let token = match claims.to_jwt(self.config.jwt_secret.to_owned()) {
-            Ok(res) => res,
-            Err(err) => return Err(Status::internal(err.to_string())),
-        };
+        let token = claims
+            .to_jwt(self.config.jwt_secret.to_owned())
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         // Make and send a reply
         let reply = LoginReply { token };
@@ -193,10 +175,8 @@ impl UsersServiceTrait for UsersService {
         };
 
         // Verify token and extract claims
-        let claims = match Claims::from_jwt(token, self.config.jwt_secret.to_owned()) {
-            Ok(res) => res,
-            Err(_) => return Err(Status::unauthenticated("Token verification failed")),
-        };
+        let claims = Claims::from_jwt(token, self.config.jwt_secret.to_owned())
+            .map_err(|_| Status::unauthenticated("Token verification failed"))?;
 
         // Fetch credentials from claims' user_id
         let credential = match credential::Entity::find()
@@ -204,10 +184,7 @@ impl UsersServiceTrait for UsersService {
             .one(&self.conn)
             .await
         {
-            Ok(res) => match res {
-                Some(res) => res,
-                None => return Err(Status::not_found("Credentials not found")),
-            },
+            Ok(res) => res.ok_or(Status::not_found("Credentials not found"))?,
             Err(err) => return Err(Status::internal(err.to_string())),
         };
 
@@ -221,10 +198,10 @@ impl UsersServiceTrait for UsersService {
         credential.salt = Set(salt);
         credential.password = Set(password);
 
-        match credential.update(&self.conn).await {
-            Ok(_) => (),
-            Err(err) => return Err(Status::internal(err.to_string())),
-        };
+        credential
+            .update(&self.conn)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         Ok(Response::new(ChangePasswordReply {}))
     }
@@ -243,22 +220,15 @@ impl UsersServiceTrait for UsersService {
         };
 
         // Verify token and extract claims
-        let claims = match Claims::from_jwt(token, self.config.jwt_secret.to_owned()) {
-            Ok(res) => res,
-            Err(_) => return Err(Status::unauthenticated("Token verification failed")),
-        };
+        let claims = Claims::from_jwt(token, self.config.jwt_secret.to_owned())
+            .map_err(|_| Status::unauthenticated("Token verification failed"))?;
 
         // Fetch user from credentials
-        let user = match user::Entity::find_by_id(claims.user_id)
+        let user = user::Entity::find_by_id(claims.user_id)
             .one(&self.conn)
             .await
-        {
-            Ok(res) => match res {
-                Some(res) => res,
-                None => return Err(Status::not_found("User not found")),
-            },
-            Err(err) => return Err(Status::internal(err.to_string())),
-        };
+            .map(|r| r.ok_or(Status::not_found("User not found")))
+            .map_err(|e| Status::internal(e.to_string()))??;
 
         // Check is admin
         if !user.admin {
@@ -289,10 +259,10 @@ impl UsersServiceTrait for UsersService {
             ..Default::default()
         };
 
-        let user = match user.insert(&self.conn).await {
-            Ok(res) => res,
-            Err(err) => return Err(Status::internal(err.to_string())),
-        };
+        let user = user
+            .insert(&self.conn)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         // Create new credentials
         let salt = utils::crypto::generate_salt();
@@ -304,10 +274,10 @@ impl UsersServiceTrait for UsersService {
             ..Default::default()
         };
 
-        match credentials.insert(&self.conn).await {
-            Ok(_) => (),
-            Err(err) => return Err(Status::internal(err.to_string())),
-        };
+        credentials
+            .insert(&self.conn)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         // Hooray!
         Ok(Response::new(CreateUserReply {}))
