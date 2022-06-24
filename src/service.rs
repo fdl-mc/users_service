@@ -256,6 +256,7 @@ impl UsersServiceTrait for UsersService {
         // Create new user
         let user = user::ActiveModel {
             nickname: Set(message.username.clone()),
+            admin: Set(false),
             ..Default::default()
         };
 
