@@ -1,0 +1,19 @@
+version: '3.5'
+
+services:
+  api:
+    image: fdl-mc/api/users
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - 8010:8000
+    depends_on:
+      - db
+    networks:
+      - fdl-api
+
+networks:
+  fdl-api: 
+    external:
+      name: fdl-api
