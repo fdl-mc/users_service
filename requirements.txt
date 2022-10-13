@@ -1,0 +1,7 @@
+pydantic
+fastapi
+fastapi-jwt
+uvicorn
+sqlalchemy
+psycopg2
+ormar[postgresql]
