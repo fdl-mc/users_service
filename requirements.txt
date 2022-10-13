@@ -1,6 +1,6 @@
 pydantic
+python-jose
 fastapi
-fastapi-jwt
 uvicorn
 sqlalchemy
 psycopg2
