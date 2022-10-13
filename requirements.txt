@@ -1,0 +1,7 @@
+pydantic
+python-jose
+fastapi
+uvicorn
+sqlalchemy
+psycopg2
+ormar[postgresql]

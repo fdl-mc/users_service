@@ -1,6 +1,9 @@
-FROM rust:latest
+FROM python
 WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
+
 COPY . .
-RUN apt update && apt install -y cmake
-RUN cargo install --path .
-CMD ["users_service"]
+
+CMD ["uvicorn", "users_service.main:app", "--proxy-headers", "--host", "0.0.0.0"]
