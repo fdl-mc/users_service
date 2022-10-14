@@ -1,34 +1,20 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from starlite import Starlite, OpenAPIConfig
 
-from users_service.database import database, engine, metadata
+from users_service.database import engine, metadata
 from users_service.routes import router
+from users_service.hooks import startup, shutdown
+from users_service.controller import UserController
+from users_service.auth import security_components
 
 metadata.create_all(engine)
 
-app = FastAPI(
-    title="Users API",
-    description="The main service for identifying users of the FDL ecosystem.",
-    generate_unique_id_function=lambda r: r.name,
+app = Starlite(
+    route_handlers=[UserController],
+    on_startup=[startup],
+    on_shutdown=[shutdown],
+    openapi_config=OpenAPIConfig(
+        title="FDL Users Service",
+        version="1.0.0",
+        components=[security_components],
+    ),
 )
-
-app.include_router(router)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-@app.on_event("startup")
-async def startup() -> None:
-    if not database.is_connected:
-        await database.connect()
-
-
-@app.on_event("shutdown")
-async def shutdown() -> None:
-    if database.is_connected:
-        await database.disconnect()

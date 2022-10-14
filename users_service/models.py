@@ -4,7 +4,7 @@ from users_service.database import database, metadata
 
 class User(ormar.Model):
     class Meta:
-        tablename: str = "users"
+        tablename = "users"
         database = database
         metadata = metadata
 
@@ -15,7 +15,7 @@ class User(ormar.Model):
 
 class Credential(ormar.Model):
     class Meta:
-        tablename: str = "credentials"
+        tablename = "credentials"
         database = database
         metadata = metadata
 
