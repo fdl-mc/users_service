@@ -2,9 +2,9 @@ from fastapi import Depends, HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
 
-from users_service.api.models import User
-from users_service.api.security import security
-from users_service.api.settings import settings
+from users_service.models import User
+from users_service.security import security
+from users_service.settings import settings
 
 
 async def jwt_claims(

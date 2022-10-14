@@ -3,15 +3,14 @@ from fastapi import Body, Depends, HTTPException
 from fastapi.routing import APIRouter
 from jose import jwt
 
-from users_service.api.crypto import generate_salt, hash_password
-from users_service.api.deps import admin_user, authenticated_user
-from users_service.api.models import Credential, User
-from users_service.api.schemas import (ChangePasswordRequest,
-                                       CreateUserRequest, LoginRequest,
-                                       LoginResponse)
-from users_service.api.settings import settings
+from users_service.crypto import generate_salt, hash_password
+from users_service.deps import admin_user, authenticated_user
+from users_service.models import Credential, User
+from users_service.schemas import (ChangePasswordRequest, CreateUserRequest,
+                                   LoginRequest, LoginResponse)
+from users_service.settings import settings
 
-router = APIRouter()
+router = APIRouter(tags=["users"])
 
 
 @router.get("/", response_model=list[User])

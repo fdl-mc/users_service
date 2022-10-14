@@ -1,6 +1,6 @@
 import databases
 import sqlalchemy
-from users_service.api.settings import settings
+from users_service.settings import settings
 
 database = databases.Database(settings.database_url)
 metadata = sqlalchemy.MetaData()

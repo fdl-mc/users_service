@@ -1,11 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from users_service.api.routes import router
-from users_service.api.database import database, metadata, engine
+
+from users_service.database import database, engine, metadata
+from users_service.routes import router
 
 metadata.create_all(engine)
 
-app = FastAPI()
+app = FastAPI(
+    title="Users API",
+    description="The main service for identifying users of the FDL ecosystem.",
+)
+
 app.include_router(router)
 app.add_middleware(
     CORSMiddleware,
