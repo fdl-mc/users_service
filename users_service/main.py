@@ -9,6 +9,7 @@ metadata.create_all(engine)
 app = FastAPI(
     title="Users API",
     description="The main service for identifying users of the FDL ecosystem.",
+    generate_unique_id_function=lambda r: r.name,
 )
 
 app.include_router(router)
