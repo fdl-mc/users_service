@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "users-service"
+version = "1.0.0"
+description = "The main service for identifying users of the FDL ecosystem."
+authors = ["FDL Community"]
+license = "GNU General Public License v3.0"
+readme = "README.md"
+packages = [{include = "users_service"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+uvloop = "^0.17.0"
+pydantic = "^1.10.2"
+ormar = "^0.11.3"
+sqlalchemy = "^1.4.41"
+psycopg2 = "^2.9.4"
+python-jose = "^3.3.0"
+starlite = "^1.27.0"
+uvicorn = "^0.18.3"
+
+[tool.poetry.group.dev.dependencies]
+types-sqlalchemy = "^1.4.53"
+types-python-jose = "^3.3.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
