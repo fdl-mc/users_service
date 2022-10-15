@@ -1,7 +1,6 @@
 from starlite import Starlite, OpenAPIConfig
 
 from users_service.database import engine, metadata
-from users_service.routes import router
 from users_service.hooks import startup, shutdown
 from users_service.controller import UserController
 from users_service.auth import security_components

@@ -1,21 +1,24 @@
+from typing import cast, Any
+
 import ormar
+from jose import JWTError, jwt
+from pydantic import BaseModel
+from pydantic_openapi_schema.v3_1_0 import (
+    Components,
+    SecurityRequirement,
+    SecurityScheme,
+)
 from starlite import (
     AbstractAuthenticationMiddleware,
-    AuthenticationResult,
     ASGIConnection,
+    AuthenticationResult,
 )
 from starlite.exceptions import NotAuthorizedException
 from starlite.middleware.base import DefineMiddleware
 from starlite_jwt import JWTAuth
-from pydantic import BaseModel
-from jose import jwt
+
 from users_service.models import User
 from users_service.settings import settings
-from pydantic_openapi_schema.v3_1_0 import (
-    SecurityScheme,
-    SecurityRequirement,
-    Components,
-)
 
 
 class Token(BaseModel):
@@ -25,7 +28,7 @@ class Token(BaseModel):
 def decode_jwt_token(encoded_token: str) -> Token:
     try:
         return Token(**jwt.decode(token=encoded_token, key=settings.jwt_secret))
-    except jwt.JWTError as e:
+    except JWTError as e:
         raise NotAuthorizedException("Invalid token") from e
 
 
@@ -35,7 +38,7 @@ def encode_jwt_token(user_id: str) -> str:
 
 class JWTAuthenticationMiddleware(AbstractAuthenticationMiddleware):
     async def authenticate_request(
-        self, connection: ASGIConnection
+        self, connection: ASGIConnection[Any, Any, Any]
     ) -> AuthenticationResult:
         auth_header = connection.headers.get("x-token")
         if not auth_header:

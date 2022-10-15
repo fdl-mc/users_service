@@ -47,7 +47,10 @@ class UserController(Controller):
         security=[security_requirement],
         middleware=[auth_middleware],
     )
-    async def get_self(self, request: Request) -> User:
+    async def get_self(
+        self,
+        request: Request[User, Any],
+    ) -> User:
         return request.user
 
     @get(
