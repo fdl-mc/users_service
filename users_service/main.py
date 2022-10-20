@@ -1,9 +1,9 @@
-from starlite import Starlite, OpenAPIConfig
+from starlite import OpenAPIConfig, Starlite
 
-from users_service.database import engine, metadata
-from users_service.hooks import startup, shutdown
-from users_service.controller import UserController
 from users_service.auth import security_components
+from users_service.controller import UserController
+from users_service.database import engine, metadata
+from users_service.hooks import shutdown, startup
 
 metadata.create_all(engine)
 

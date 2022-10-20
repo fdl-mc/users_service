@@ -1,4 +1,4 @@
-from typing import cast, Any
+from typing import Any
 
 import ormar
 from jose import JWTError, jwt
@@ -15,7 +15,6 @@ from starlite import (
 )
 from starlite.exceptions import NotAuthorizedException
 from starlite.middleware.base import DefineMiddleware
-from starlite_jwt import JWTAuth
 
 from users_service.models import User
 from users_service.settings import settings
@@ -27,7 +26,12 @@ class Token(BaseModel):
 
 def decode_jwt_token(encoded_token: str) -> Token:
     try:
-        return Token(**jwt.decode(token=encoded_token, key=settings.jwt_secret))
+        return Token(
+            **jwt.decode(
+                token=encoded_token,
+                key=settings.jwt_secret,
+            )
+        )
     except JWTError as e:
         raise NotAuthorizedException("Invalid token") from e
 
@@ -54,7 +58,10 @@ class JWTAuthenticationMiddleware(AbstractAuthenticationMiddleware):
         return AuthenticationResult(user=user, auth=token)
 
 
-auth_middleware = DefineMiddleware(JWTAuthenticationMiddleware, exclude="schema")
+auth_middleware = DefineMiddleware(
+    JWTAuthenticationMiddleware,
+    exclude="schema",
+)
 
 security_components: Components = Components(
     securitySchemes={
@@ -66,4 +73,6 @@ security_components: Components = Components(
     }
 )
 
-security_requirement: SecurityRequirement = {"Authentication token": []}
+security_requirement: SecurityRequirement = {
+    "Authentication token": [],
+}

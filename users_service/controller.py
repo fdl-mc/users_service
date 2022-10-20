@@ -1,24 +1,25 @@
 from typing import Any
+
 import ormar
 from starlite import Body, Request
 from starlite.controller import Controller
-from starlite.handlers import get, post, put, patch
 from starlite.exceptions import (
-    NotFoundException,
     NotAuthorizedException,
+    NotFoundException,
     PermissionDeniedException,
 )
+from starlite.handlers import get, patch, post, put
 
-from users_service.models import User, Credential
+from users_service.auth import auth_middleware, encode_jwt_token, security_requirement
+from users_service.crypto import generate_salt, hash_password
+from users_service.guards import admin_user_guard
+from users_service.models import Credential, User
 from users_service.schemas import (
+    ChangePasswordRequest,
+    CreateUserRequest,
     LoginRequest,
     LoginResponse,
-    CreateUserRequest,
-    ChangePasswordRequest,
 )
-from users_service.crypto import hash_password, generate_salt
-from users_service.auth import security_requirement, auth_middleware, encode_jwt_token
-from users_service.guards import admin_user_guard
 
 
 class UserController(Controller):
@@ -58,7 +59,9 @@ class UserController(Controller):
         description="Find users by username query",
     )
     async def find_users(self, username: str) -> list[User]:
-        return await User.objects.filter(User.username.startswith(username)).all()
+        return await User.objects.filter(
+            User.username.startswith(username),
+        ).all()
 
     @put(
         "/",
@@ -76,7 +79,11 @@ class UserController(Controller):
         user = await User.objects.create(username=data.username)
         salt = generate_salt()
         password = hash_password(data.password, salt)
-        await Credential.objects.create(user=user, password=password, salt=salt)
+        await Credential.objects.create(
+            user=user,
+            password=password,
+            salt=salt,
+        )
 
     @post(
         "/login",
@@ -92,7 +99,8 @@ class UserController(Controller):
         except ormar.NoMatch:
             raise NotAuthorizedException(detail="Wrong username or password")
 
-        if credential.password == hash_password(data.password, credential.salt):
+        hash = hash_password(data.password, credential.salt)
+        if credential.password == hash:
             token = encode_jwt_token(str(credential.user.id))
             return LoginResponse(token=token)
         else:

@@ -1,4 +1,5 @@
 import ormar
+
 from users_service.database import database, metadata
 
 
