@@ -2,21 +2,23 @@ version: '3.5'
 
 services:
   db:
-    image: postgres
-    restart: always
-    volumes:
-      - ./data/db:/var/lib/postgresql/data
-    ports:
-      - 8011:5432
-    environment:
-      - POSTGRES_DB=fdl
+      image: postgres
+      restart: always
+      volumes:
+        - ./data/db:/var/lib/postgresql/data
+      ports:
+        - 8011:5432
+      environment:
+        - POSTGRES_DB=fdl
+        - POSTGRES_USER=fdl
+        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
   api:
-    image: fdl-mc/api/users
+    image: fdl_users_service
     environment:
-      - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
+      - DATABASE_URL=postgresql://fdl:${POSTGRES_PASSWORD}@db/fdl
     ports:
-      - 8010:8000
+      - 8010:8010
     depends_on:
       - db
