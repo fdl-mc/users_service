@@ -1,3 +1,5 @@
+> ⚠️ Moved to https://codeberg.org/FDL/users_service
+
 # Users API Service
 The main service for identifying users of the FDL ecosystem.
 
